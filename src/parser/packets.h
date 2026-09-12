@@ -1,7 +1,34 @@
 #pragma once
 
-#include "pcapparser.h"
+#include "common/types.h"
+#include <stdint.h>
 #include <stddef.h>
+
+struct PCapPacket {
+    uint32_t unix_timestamp;
+    // Microseconds or nanoseconds (depending on the .pcap file's resolution) after the value given by
+    // unix_timestamp;
+    uint32_t precise_timing;
+    // Size in bytes.
+    uint32_t size;
+    // The original size of the packet before it was truncated, or the same as size if it wasn't
+    // truncated.
+    uint32_t original_size;
+    unsigned char* data;
+};
+
+struct PCapData {
+    enum PCapTimingResolution resolution;
+    enum Endianness endianness;
+    enum LinkLayerType link_layer_type;
+    // The size limit the packet capture program used when capturing packets (i.e. any packets originally larger
+    // than this were truncated).
+    uint32_t packet_size_limit;
+    uint32_t packet_count;
+    uint16_t major_version;
+    uint16_t minor_version;
+    struct PCapPacket** packets;
+};
 
 struct __attribute__((packed)) EthernetPacket {
     uint8_t destination_mac_address[6];
@@ -50,7 +77,8 @@ struct __attribute__((packed)) TCPPacket {
     unsigned char options_and_data[];
 };
 
-struct TCPPacket** parse_tcp_packets(struct PCapData* traffic_data, size_t* out_count);
-unsigned char* tcppacket_get_data_start(struct TCPPacket* packet);
-size_t tcppacket_get_data_length(struct TCPPacket* packet);
-enum TCPFlag tcppacket_get_flag(struct TCPPacket* packet);
+unsigned char* tcppacket_get_data_start(const struct TCPPacket* packet);
+size_t tcppacket_get_data_length(const struct TCPPacket* packet);
+enum TCPFlag tcppacket_get_flag(const struct TCPPacket* packet);
+int pcappacket_compare_timestamps(const void* a, const void* b);
+unsigned char* ipv4packet_get_data_start(const struct IPV4Packet* packet);

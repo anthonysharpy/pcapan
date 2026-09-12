@@ -1,6 +1,7 @@
 #include "pcapparser.h"
 #include "fileio/fileio.h"
 #include "common/stringify.h"
+#include "packets.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -60,20 +61,6 @@ int parse_pcap_file_header(struct FileData* file_data, struct PCapData* pcap_dat
     }
 
     return 0;
-}
-
-uint64_t pcappacket_get_combined_timestamp(struct PCapPacket* packet) {
-    return ((uint64_t)packet->unix_timestamp << 32) | packet->precise_timing;
-}
-
-int compare_pcappacket_timestamps(const void* a, const void* b) {
-    struct PCapPacket* packet_a = *(struct PCapPacket* const*)a;
-    struct PCapPacket* packet_b = *(struct PCapPacket* const*)b;
-
-    uint64_t packet_a_timestamp = pcappacket_get_combined_timestamp(packet_a);
-    uint64_t packet_b_timestamp = pcappacket_get_combined_timestamp(packet_b);
-
-    return (packet_a_timestamp > packet_b_timestamp) - (packet_a_timestamp < packet_b_timestamp);
 }
 
 size_t filedata_count_pcap_packets(struct FileData* data, enum Endianness endianness) {
@@ -155,7 +142,7 @@ int parse_pcap_file_packets(struct FileData* file_data, struct PCapData* pcap_da
         pcap_data_out->packets,
         pcap_data_out->packet_count,
         sizeof(*pcap_data_out->packets),
-        compare_pcappacket_timestamps
+        pcappacket_compare_timestamps
     );
 
     return 0;
