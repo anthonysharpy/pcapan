@@ -100,7 +100,7 @@ static int parse_pcap_file_packets(const struct FileData* file_data, struct PCap
         if (!packet) goto fail;
 
         if (file_data->length < file_pos+16) {
-            fprintf(stderr, "Packet capture data is is corrupt in parse_pcap_file_packets\n");
+            fprintf(stderr, "Packet capture data is corrupt in parse_pcap_file_packets\n");
             goto fail;
         }
 
@@ -108,6 +108,11 @@ static int parse_pcap_file_packets(const struct FileData* file_data, struct PCap
         memcpy(&packet->precise_timing, &file_data->data[file_pos+4], 4);
         memcpy(&packet->size, &file_data->data[file_pos+8], 4);
         memcpy(&packet->original_size, &file_data->data[file_pos+12], 4);
+
+        if (packet->size > pcap_data_out->packet_size_limit) {
+            fprintf(stderr, "Packet has corrupt size header in parse_pcap_file_packets\n");
+            goto fail;
+        }
 
         // Swap endianness if necessary.
         if (pcap_data_out->endianness == ENDIANNESS_BIG) {

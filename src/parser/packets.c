@@ -12,10 +12,9 @@ static size_t ipv4packet_get_header_length(const struct IPV4Packet* packet) {
         fprintf(stderr, "IPV4Packet has corrupt header length of %zu, truncating to 20...\n", header_length);
         return 20;
     }
-    // Avoid corrupt header lengths causing UB.
-    if (header_length > 60) {
-        fprintf(stderr, "IPV4Packet has corrupt header length of %zu, truncating to 60...\n", header_length);
-        return 60;
+    if (header_length > packet->length) {
+        fprintf(stderr, "IPV4Packet has corrupt header length of %zu, truncating...\n", header_length);
+        return packet->length;
     }
 
     return header_length;
@@ -34,10 +33,13 @@ static size_t tcppacket_get_header_length(const struct TCPPacket* packet) {
         fprintf(stderr, "TCPPacket has corrupt header length of %zu, truncating to 20...\n", length);
         return 20;
     }
-    // Avoid corrupt header lengths causing UB.
     if (length > 60) {
         fprintf(stderr, "TCPPacket has corrupt header length of %zu, truncating to 60...\n", length);
         return 60;
+    }
+    if (length - 20 > packet->options_and_data_length) {
+        fprintf(stderr, "TCPPacket has corrupt header length of %zu, truncating to 20...\n", length);
+        return 20;
     }
 
     return length;
