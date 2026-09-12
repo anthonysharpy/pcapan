@@ -18,15 +18,15 @@ int get_file_bytes(char* filename, struct FileData* data_out) {
 
     rewind(file);
 
-    data = malloc(size);
+    data = malloc((size_t)size);
     if (!data) goto fail;
 
-    size_t read = fread(data, 1, size, file);
+    size_t read = fread(data, 1, (size_t)size, file);
 
     if (read != (size_t)size) goto fail;
 
     data_out->data = data;
-    data_out->length = size;
+    data_out->length = (size_t)size;
     fclose(file);
     return 0;
     

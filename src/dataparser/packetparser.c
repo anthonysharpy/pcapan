@@ -33,7 +33,7 @@ size_t tcppacket_get_header_length(struct TCPPacket* packet) {
 
 // Find the address where the data begins in an TCPPacket.
 unsigned char* tcppacket_get_data_start(struct TCPPacket* packet) {
-    unsigned int header_length = tcppacket_get_header_length(packet);
+    size_t header_length = tcppacket_get_header_length(packet);
 
     return (unsigned char*)packet + offsetof(struct TCPPacket, source_port) + header_length;
 }
@@ -44,7 +44,7 @@ enum TCPFlag tcppacket_get_flag(struct TCPPacket* packet) {
 
 // Find out how much data is in a TCPPacket in bytes.
 size_t tcppacket_get_data_length(struct TCPPacket* packet) {
-    unsigned int header_length = tcppacket_get_header_length(packet);
+    size_t header_length = tcppacket_get_header_length(packet);
 
     return packet->options_and_data_length - (header_length - 20);
 }
@@ -110,7 +110,7 @@ struct IPV4Packet* parse_ipv4_packet(struct EthernetPacket* ethernet_packet, siz
     packet->flags_and_offset = __builtin_bswap16(packet->flags_and_offset);
     packet->identification = __builtin_bswap16(packet->identification);
 
-    unsigned int ihl = LOW_NIBBLE(packet->version_and_ihl);
+    uint8_t ihl = LOW_NIBBLE(packet->version_and_ihl);
     size_t header_length = ihl * 4;
 
     if (header_length < 20) {

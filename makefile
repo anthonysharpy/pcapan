@@ -1,6 +1,6 @@
 GCCVERSION := gcc-15
 OPT := -O3 -march=native -mtune=native -flto=auto -funroll-loops -fomit-frame-pointer -pipe
-CFLAGS := -std=c23 $(OPT) -Wall -Wextra -DNDEBUG -Isrc
+CFLAGS := -std=c23 $(OPT) -Wall -Wextra -Wshadow -Wconversion -Wvla -DNDEBUG -Isrc
 LDFLAGS := $(OPT)
 
 SRCS := $(shell find src -name '*.c')

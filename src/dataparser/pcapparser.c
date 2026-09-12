@@ -5,7 +5,7 @@
 #include <string.h>
 
 void cleanup_pcap_data(struct PCapData data) {
-    for (unsigned int i = 0; i < data.packet_count; ++i) {
+    for (size_t i = 0; i < data.packet_count; ++i) {
         if (data.packets[i]) {
             if (data.packets[i]->data) free(data.packets[i]->data);
             free(data.packets[i]);
@@ -77,16 +77,16 @@ int compare_pcappacket_timestamps(const void* a, const void* b) {
 
 size_t filedata_count_pcap_packets(struct FileData* data, enum Endianness endianness) {
     // Start at 24 (skip the header). Then add 8 more to get us to the first length field.
-    unsigned int file_pos = 32;
+    size_t file_pos = 32;
     size_t packets = 0;
 
     while (file_pos < data->length) {
         ++packets;
 
-        unsigned int data_length = 0;
+        size_t data_length = 0;
         memcpy(&data_length, &data->data[file_pos], 4);
 
-        if (endianness == ENDIANNESS_BIG) data_length = __builtin_bswap32(data_length);
+        if (endianness == ENDIANNESS_BIG) data_length = __builtin_bswap32((unsigned int)data_length);
 
         file_pos += 16 + data_length;
     }
@@ -109,8 +109,8 @@ int parse_pcap_file_packets(struct FileData file_data, struct PCapData* pcap_dat
     pcap_data_out->packets = calloc(pcap_data_out->packet_count, sizeof(struct PCapPacket*));
     if (!pcap_data_out->packets) return -1;
 
-    unsigned int file_pos = 24;
-    unsigned int nth_packet = 0;
+    size_t file_pos = 24;
+    size_t nth_packet = 0;
 
     while (file_pos < file_data.length) {
         struct PCapPacket* packet = calloc(1, sizeof(struct PCapPacket));

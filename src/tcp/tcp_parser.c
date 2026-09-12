@@ -150,7 +150,7 @@ void print_tcpconnectionpool_byte_streams(struct TCPConnectionPool* pool) {
         }
 
         printf("\n=============================\n");
-        printf("=============================\n\n\n");
+        printf("=============================\n\n");
     }
 }
 
