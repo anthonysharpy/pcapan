@@ -50,8 +50,7 @@ struct __attribute__((packed)) TCPPacket {
     unsigned char options_and_data[];
 };
 
-struct TCPPacket** parse_tcp_packets(struct PCapData traffic_data, int* out_count);
+struct TCPPacket** parse_tcp_packets(struct PCapData traffic_data, size_t* out_count);
 unsigned char* tcppacket_get_data_start(struct TCPPacket* packet);
 size_t tcppacket_get_data_length(struct TCPPacket* packet);
 enum TCPFlag tcppacket_get_flag(struct TCPPacket* packet);
-uint32_t tcppacket_get_sent_timestamp(struct TCPPacket* packet);

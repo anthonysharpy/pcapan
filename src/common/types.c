@@ -41,52 +41,10 @@ const char* tcpflag_to_string(enum TCPFlag flag) {
     out[0] = '\0';
     bool comma = false;
 
-    if (flag & TCP_FLAG_ACK) {
-        if (comma) strcat(out, ",ACK");
-        else {
-            strcat(out, "ACK");
-            comma = true;
-        }
-    }
-    if (flag & TCP_FLAG_AE) {
-        if (comma) strcat(out, ",AE");
-        else {
-            strcat(out, "AE");
-            comma = true;
-        }
-    }
-    if (flag & TCP_FLAG_CWR) {
-        if (comma) strcat(out, ",CWR");
-        else {
-            strcat(out, "CWR");
-            comma = true;
-        }
-    }
-    if (flag & TCP_FLAG_ECE) {
-        if (comma) strcat(out, ",ECE");
-        else {
-            strcat(out, "ECE");
-            comma = true;
-        }
-    }
     if (flag & TCP_FLAG_FIN) {
         if (comma) strcat(out, ",FIN");
         else {
             strcat(out, "FIN");
-            comma = true;
-        }
-    }
-    if (flag & TCP_FLAG_PSH) {
-        if (comma) strcat(out, ",PSH");
-        else {
-            strcat(out, "PSH");
-            comma = true;
-        }
-    }
-    if (flag & TCP_FLAG_RST) {
-        if (comma) strcat(out, ",RST");
-        else {
-            strcat(out, "RST");
             comma = true;
         }
     }
@@ -97,10 +55,52 @@ const char* tcpflag_to_string(enum TCPFlag flag) {
             comma = true;
         }
     }
+    if (flag & TCP_FLAG_RST) {
+        if (comma) strcat(out, ",RST");
+        else {
+            strcat(out, "RST");
+            comma = true;
+        }
+    }
+    if (flag & TCP_FLAG_PSH) {
+        if (comma) strcat(out, ",PSH");
+        else {
+            strcat(out, "PSH");
+            comma = true;
+        }
+    }
+    if (flag & TCP_FLAG_ACK) {
+        if (comma) strcat(out, ",ACK");
+        else {
+            strcat(out, "ACK");
+            comma = true;
+        }
+    }
     if (flag & TCP_FLAG_URG) {
         if (comma) strcat(out, ",URG");
         else {
             strcat(out, "URG");
+            comma = true;
+        }
+    }
+    if (flag & TCP_FLAG_ECE) {
+        if (comma) strcat(out, ",ECE");
+        else {
+            strcat(out, "ECE");
+            comma = true;
+        }
+    }
+    if (flag & TCP_FLAG_CWR) {
+        if (comma) strcat(out, ",CWR");
+        else {
+            strcat(out, "CWR");
+            comma = true;
+        }
+    }
+    if (flag & TCP_FLAG_AE) {
+        if (comma) strcat(out, ",AE");
+        else {
+            strcat(out, "AE");
             comma = true;
         }
     }

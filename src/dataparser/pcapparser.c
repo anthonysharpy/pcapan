@@ -11,6 +11,8 @@ void cleanup_pcap_data(struct PCapData data) {
             free(data.packets[i]);
         }
     }
+
+    free(data.packets);
 }
 
 // Parse a FileData that contains the header of a packet capture file.
@@ -101,7 +103,7 @@ int parse_pcap_file_packets(struct FileData file_data, struct PCapData* pcap_dat
         return 0; // No packets to read.
     }
 
-    pcap_data_out->packet_count = filedata_count_pcap_packets(&file_data, pcap_data_out->endianness);;
+    pcap_data_out->packet_count = filedata_count_pcap_packets(&file_data, pcap_data_out->endianness);
 
     // Now create the packets.
     pcap_data_out->packets = calloc(pcap_data_out->packet_count, sizeof(struct PCapPacket*));
@@ -113,6 +115,11 @@ int parse_pcap_file_packets(struct FileData file_data, struct PCapData* pcap_dat
     while (file_pos < file_data.length) {
         struct PCapPacket* packet = calloc(1, sizeof(struct PCapPacket));
         if (!packet) goto fail;
+
+        if (file_data.length <= file_pos+16) {
+            fprintf(stderr, "Packet capture data is is corrupt\n");
+            goto fail;
+        }
 
         memcpy(&packet->unix_timestamp, &file_data.data[file_pos], 4);
         memcpy(&packet->precise_timing, &file_data.data[file_pos+4], 4);
@@ -129,6 +136,11 @@ int parse_pcap_file_packets(struct FileData file_data, struct PCapData* pcap_dat
 
         packet->data = malloc(packet->size);
         if (!packet->data) goto fail;
+
+        if (file_data.length <= file_pos+packet->size) {
+            fprintf(stderr, "Packet capture data is is corrupt\n");
+            goto fail;
+        }
 
         memcpy(packet->data, &file_data.data[file_pos+16], packet->size);
 

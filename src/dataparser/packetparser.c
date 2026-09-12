@@ -15,7 +15,20 @@ unsigned char* ipv4packet_get_data_start(struct IPV4Packet* packet) {
 }
 
 size_t tcppacket_get_header_length(struct TCPPacket* packet) {
-    return (packet->data_offset_and_flags >> 12) * 4;
+    size_t length = (packet->data_offset_and_flags >> 12) * 4;
+
+    // Avoid corrupt header lengths causing UB.
+    if (length < 20) {
+        fprintf(stderr, "TCPPacket has corrupt header length of %zu, truncating to 20...\n", length);
+        return 20;
+    }
+    // Avoid corrupt header lengths causing UB.
+    if (length > 60) {
+        fprintf(stderr, "TCPPacket has corrupt header length of %zu, truncating to 60...\n", length);
+        return 60;
+    }
+
+    return length;
 }
 
 // Find the address where the data begins in an TCPPacket.
@@ -29,7 +42,7 @@ enum TCPFlag tcppacket_get_flag(struct TCPPacket* packet) {
     return packet->data_offset_and_flags & 0b111111111;
 }
 
-// Find out how much data is in an TCPPacket in bytes.
+// Find out how much data is in a TCPPacket in bytes.
 size_t tcppacket_get_data_length(struct TCPPacket* packet) {
     unsigned int header_length = tcppacket_get_header_length(packet);
 
@@ -202,9 +215,9 @@ fail:
 // Parse the network traffic, returning an array of any TCP packets found.
 //
 // Returns nullptr on failure or if no TCP packets were found.
-struct TCPPacket** parse_tcp_packets(struct PCapData traffic_data, int* out_count) {
+struct TCPPacket** parse_tcp_packets(struct PCapData traffic_data, size_t* out_count) {
     *out_count = 0;
-    struct TCPPacket** output = malloc(sizeof(output) * traffic_data.packet_count);
+    struct TCPPacket** output = malloc(sizeof(*output) * traffic_data.packet_count);
     if (!output) {
         fprintf(stderr, "Failed allocating TCP packets\n");
         return nullptr;
