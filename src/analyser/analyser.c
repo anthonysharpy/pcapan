@@ -1,77 +1,21 @@
-#include "tcp_parser.h"
-#include "parser/packetparser.h"
+#include "analyser.h"
 #include "common/stringify.h"
+#include "parser/packet_parser.h"
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stddef.h>
-#include <inttypes.h>
 
-// Hard-coding these sizes is really stupid but I haven't got time to make it better.
-// All code will assume these limits are never reached.
-constexpr size_t TCPCONNECTION_MAX_PACKETS = 64;
-constexpr size_t TCPCONNECTIONPOOL_SIZE = 64;
-
-struct TCPConnection {
-    uint32_t source_ip;
-    uint32_t destination_ip;
-    uint16_t source_port;
-    uint16_t destination_port;
-    struct TCPPacket* packets[TCPCONNECTION_MAX_PACKETS];
-    size_t packet_count;
-};
-
-struct TCPConnectionPool {
-    struct TCPConnection connections[TCPCONNECTIONPOOL_SIZE];
-    size_t connection_count;
-};
-
-struct TCPConnection* tcpconnectionpool_find_connection(
-    struct TCPConnectionPool* pool,
-    uint32_t source_ip,
-    uint32_t destination_ip,
-    uint16_t source_port,
-    uint16_t destination_port
-) {
-    for (size_t i = 0; i < pool->connection_count; ++i) {
-        struct TCPConnection* connection = &pool->connections[i];
-
-        if (
-            (connection->source_ip == source_ip
-                && connection->source_port == source_port
-                && connection->destination_ip == destination_ip
-                && connection->destination_port == destination_port
-            ) || (connection->source_ip == destination_ip
-                && connection->source_port == destination_port
-                && connection->destination_ip == source_ip
-                && connection->destination_port == source_port
-            )
-        ) {
-            return &pool->connections[i];
-        }
-    }
-
-    return nullptr;
-}
-
-void tcpconnectionpool_push_connection(struct TCPConnectionPool* pool, struct TCPConnection* connection) {
-    if (pool->connection_count >= TCPCONNECTIONPOOL_SIZE) {
-        fprintf(stderr, "Pool has too many connections, dropping connection...\n");
-        return;
-    }
-
-    pool->connections[pool->connection_count] = *connection;
-    ++pool->connection_count;
-}
-
-// Push a packet to the connection.
-void tcpconnection_push_packet(struct TCPConnection* connection, struct TCPPacket* packet) {
-    if (connection->packet_count >= TCPCONNECTION_MAX_PACKETS) {
-        fprintf(stderr, "Connection has too many packets, dropping packet...\n");
-        return;
-    }
-
-    connection->packets[connection->packet_count] = packet;
-    ++connection->packet_count;
+void analyse_pcap_file(const struct PCapData* pcap_data) {
+    printf("==============================\n");
+    printf("====== .pcap file Info ======\n");
+    printf("==============================\n");
+    printf("Version: %d.%d\n", pcap_data->major_version, pcap_data->minor_version);
+    printf("Resolution: %s\n", timingresolution_to_string(pcap_data->resolution));
+    printf("Endianness: %s\n", endianness_to_string(pcap_data->endianness));
+    printf("Packet size limit: %d\n", pcap_data->packet_size_limit);
+    printf("Link layer type: %s\n", linklayertype_to_string(pcap_data->link_layer_type));
+    printf("Packet count: %d\n", pcap_data->packet_count);
+    printf("==============================\n\n");
 }
 
 void organise_tcp_packets_by_connection(

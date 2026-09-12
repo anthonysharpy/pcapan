@@ -82,3 +82,4 @@ size_t tcppacket_get_data_length(const struct TCPPacket* packet);
 enum TCPFlag tcppacket_get_flag(const struct TCPPacket* packet);
 int pcappacket_compare_timestamps(const void* a, const void* b);
 unsigned char* ipv4packet_get_data_start(const struct IPV4Packet* packet);
+void pcapdata_destroy(struct PCapData* data);

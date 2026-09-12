@@ -1,6 +1,7 @@
-#include "packetparser.h"
-#include "pcapparser.h"
+#include "packet_parser.h"
+#include "pcap_parser.h"
 #include "common/helpers.h"
+#include "common/stringify.h"
 #include <stdio.h>
 #include <inttypes.h>
 #include <string.h>
@@ -167,6 +168,55 @@ fail:
     free(ipv4_packet);
     free(ethernet_packet);
     return nullptr;
+}
+
+struct TCPConnection* tcpconnectionpool_find_connection(
+    struct TCPConnectionPool* pool,
+    uint32_t source_ip,
+    uint32_t destination_ip,
+    uint16_t source_port,
+    uint16_t destination_port
+) {
+    for (size_t i = 0; i < pool->connection_count; ++i) {
+        struct TCPConnection* connection = &pool->connections[i];
+
+        if (
+            (connection->source_ip == source_ip
+                && connection->source_port == source_port
+                && connection->destination_ip == destination_ip
+                && connection->destination_port == destination_port
+            ) || (connection->source_ip == destination_ip
+                && connection->source_port == destination_port
+                && connection->destination_ip == source_ip
+                && connection->destination_port == source_port
+            )
+        ) {
+            return &pool->connections[i];
+        }
+    }
+
+    return nullptr;
+}
+
+void tcpconnectionpool_push_connection(struct TCPConnectionPool* pool, struct TCPConnection* connection) {
+    if (pool->connection_count >= TCPCONNECTIONPOOL_SIZE) {
+        fprintf(stderr, "Pool has too many connections, dropping connection...\n");
+        return;
+    }
+
+    pool->connections[pool->connection_count] = *connection;
+    ++pool->connection_count;
+}
+
+// Push a packet to the connection.
+void tcpconnection_push_packet(struct TCPConnection* connection, struct TCPPacket* packet) {
+    if (connection->packet_count >= TCPCONNECTION_MAX_PACKETS) {
+        fprintf(stderr, "Connection has too many packets, dropping packet...\n");
+        return;
+    }
+
+    connection->packets[connection->packet_count] = packet;
+    ++connection->packet_count;
 }
 
 // Parse the network traffic, returning an array of any TCP packets found.

@@ -1,6 +1,7 @@
 #include "packets.h"
 #include "common/helpers.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 // Find the address where the data begins in an IPV4Packet.
 unsigned char* ipv4packet_get_data_start(const struct IPV4Packet* packet) {
@@ -59,4 +60,15 @@ int pcappacket_compare_timestamps(const void* a, const void* b) {
     uint64_t packet_b_timestamp = pcappacket_get_combined_timestamp(packet_b);
 
     return (packet_a_timestamp > packet_b_timestamp) - (packet_a_timestamp < packet_b_timestamp);
+}
+
+void pcapdata_destroy(struct PCapData* data) {
+    for (size_t i = 0; i < data->packet_count; ++i) {
+        if (data->packets[i]) {
+            if (data->packets[i]->data) free(data->packets[i]->data);
+            free(data->packets[i]);
+        }
+    }
+
+    free(data->packets);
 }

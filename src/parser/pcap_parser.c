@@ -1,21 +1,10 @@
-#include "pcapparser.h"
+#include "pcap_parser.h"
 #include "fileio/fileio.h"
 #include "common/stringify.h"
 #include "packets.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-void pcapdata_destroy(struct PCapData* data) {
-    for (size_t i = 0; i < data->packet_count; ++i) {
-        if (data->packets[i]) {
-            if (data->packets[i]->data) free(data->packets[i]->data);
-            free(data->packets[i]);
-        }
-    }
-
-    free(data->packets);
-}
 
 // Parse a FileData that contains the header of a packet capture file.
 //
@@ -178,17 +167,4 @@ struct PCapData* parse_pcap_file(struct FileData* file_data) {
 
 done:
     return pcap_data;
-}
-
-void analyse_pcap_file(struct PCapData* pcap_data) {
-    printf("==============================\n");
-    printf("====== .pcap file Info ======\n");
-    printf("==============================\n");
-    printf("Version: %d.%d\n", pcap_data->major_version, pcap_data->minor_version);
-    printf("Resolution: %s\n", timingresolution_to_string(pcap_data->resolution));
-    printf("Endianness: %s\n", endianness_to_string(pcap_data->endianness));
-    printf("Packet size limit: %d\n", pcap_data->packet_size_limit);
-    printf("Link layer type: %s\n", linklayertype_to_string(pcap_data->link_layer_type));
-    printf("Packet count: %d\n", pcap_data->packet_count);
-    printf("==============================\n\n");
 }

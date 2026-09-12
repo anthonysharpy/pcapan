@@ -1,8 +1,8 @@
 #include "fileio/fileio.h"
-#include "parser/pcapparser.h"
-#include "parser/packetparser.h"
+#include "parser/pcap_parser.h"
+#include "parser/packet_parser.h"
+#include "analyser/analyser.h"
 #include "common/types.h"
-#include "tcp/tcp_parser.h"
 #include <stdio.h>
 #include <stdlib.h>
 
