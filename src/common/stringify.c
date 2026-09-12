@@ -5,8 +5,10 @@
 #include <stdio.h>
 
 char* ip_to_string(const uint32_t ip, char* out_buffer) {
-    sprintf(
-        out_buffer, "%u.%u.%u.%u",
+    snprintf(
+        out_buffer,
+        16,
+        "%u.%u.%u.%u",
         (ip >> 24) & 0xFF,
         (ip >> 16) & 0xFF,
         (ip >> 8)  & 0xFF,
