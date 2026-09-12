@@ -19,7 +19,7 @@ void analyse_pcap_file(const struct PCapData* pcap_data) {
 }
 
 void organise_tcp_packets_by_connection(
-    size_t packet_count,
+    const size_t packet_count,
     struct TCPConnectionPool* pool,
     struct TCPPacket** tcp_packets
 ) {
@@ -49,19 +49,19 @@ void organise_tcp_packets_by_connection(
     }
 }
 
-void print_tcpconnectionpool_byte_streams(struct TCPConnectionPool* pool) {
+void print_tcpconnectionpool_byte_streams(const struct TCPConnectionPool* pool) {
     char ip_buffer_1[16];
     char ip_buffer_2[16];
 
     for (size_t c = 0; c < pool->connection_count; ++c) {
-        struct TCPConnection* connection = &pool->connections[c];
+        const struct TCPConnection* connection = &pool->connections[c];
 
         printf("\n=============================\n");
         printf("======= Connection %zu =======\n", c+1);
         printf("=============================");
 
         for (size_t p = 0; p < connection->packet_count; ++p) {
-            struct TCPPacket* packet = pool->connections[c].packets[p];
+            const struct TCPPacket* packet = pool->connections[c].packets[p];
 
             size_t packet_size = tcppacket_get_data_length(packet);
 
@@ -99,7 +99,7 @@ void print_tcpconnectionpool_byte_streams(struct TCPConnectionPool* pool) {
 }
 
 // Analyses the TCP byte streams within the given data, outputting the information to the console.
-void analyse_tcp_byte_streams(struct PCapData* data) {
+void analyse_tcp_byte_streams(const struct PCapData* data) {
     struct TCPConnectionPool pool = {0};
 
     printf("==============================\n");

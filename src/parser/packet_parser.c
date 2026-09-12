@@ -7,17 +7,20 @@
 #include <string.h>
 #include <stdlib.h>
 
-struct TCPPacket* parse_tcp_packet(struct IPV4Packet* ipv4_packet, size_t* remaining_length) {
+// Returns nullptr on failure.
+struct TCPPacket* parse_tcp_packet(const struct IPV4Packet* ipv4_packet, size_t* remaining_length) {
+    struct TCPPacket* packet = nullptr;
+
     if (*remaining_length < 20) {
         fprintf(stderr, "TCP packet is too small to be valid\n");
-        return nullptr;
+        goto done;
     }
 
     // We have custom IP fields at the start of the struct that we don't want to copy into.
     constexpr size_t tcppacket_start_offset = offsetof(struct TCPPacket, source_port);
 
-    struct TCPPacket* packet = calloc(1, *remaining_length + tcppacket_start_offset);
-    if (!packet) return nullptr;
+    packet = calloc(1, *remaining_length + tcppacket_start_offset);
+    if (!packet) goto done;
 
     memcpy((unsigned char*)packet + tcppacket_start_offset, ipv4packet_get_data_start(ipv4_packet), *remaining_length);
     packet->source_ip = ipv4_packet->source_ip;
@@ -33,13 +36,17 @@ struct TCPPacket* parse_tcp_packet(struct IPV4Packet* ipv4_packet, size_t* remai
     packet->urgent_pointer = __builtin_bswap16(packet->urgent_pointer);
     packet->window_size = __builtin_bswap16(packet->window_size);
 
+done:
     return packet;
 }
 
-struct IPV4Packet* parse_ipv4_packet(struct EthernetPacket* ethernet_packet, size_t* remaining_length) {
+// Returns nullptr on failure.
+static struct IPV4Packet* parse_ipv4_packet(const struct EthernetPacket* ethernet_packet, size_t* remaining_length) {
+    struct IPV4Packet* packet = nullptr;
+
     if (*remaining_length < 20) {
         fprintf(stderr, "IPV4 packet is too small to be valid\n");
-        return nullptr;
+        goto done;
     }
 
     // Check length.
@@ -49,15 +56,15 @@ struct IPV4Packet* parse_ipv4_packet(struct EthernetPacket* ethernet_packet, siz
 
     if (*remaining_length < length) {
         fprintf(stderr, "IPV4 packet's claimed length is too small to be valid\n");
-        return nullptr;
+        goto done;
     }
     if (length < 20) {
         fprintf(stderr, "IPV4 packet's claimed length is too small to be valid\n");
-        return nullptr;
+        goto done;
     }
 
-    struct IPV4Packet* packet = malloc(length);
-    if (!packet) return nullptr;
+    packet = malloc(length);
+    if (!packet) goto done;
 
     memcpy(packet, ethernet_packet->data, length);
 
@@ -73,11 +80,11 @@ struct IPV4Packet* parse_ipv4_packet(struct EthernetPacket* ethernet_packet, siz
 
     if (header_length < 20) {
         fprintf(stderr, "IPV4 packet has impossibly small header length\n");
-        goto fail;
+        goto done;
     }
     if (header_length > length) {
         fprintf(stderr, "IPV4 header length exceeds total length\n");
-        goto fail;
+        goto done;
     }
 
     // An ethernet packet can be padded with extra bytes if it's small.
@@ -85,23 +92,23 @@ struct IPV4Packet* parse_ipv4_packet(struct EthernetPacket* ethernet_packet, siz
     // to correct it.
     *remaining_length = length - header_length;
 
+done:
     return packet;
-
-fail:
-    free(packet);
-    return nullptr;
 }
 
-struct EthernetPacket* parse_ethernet_packet(struct PCapPacket pcap_packet, size_t* remaining_length) {
+// Returns nullptr on failure.
+static struct EthernetPacket* parse_ethernet_packet(const struct PCapPacket pcap_packet, size_t* remaining_length) {
+    struct EthernetPacket* packet = nullptr;
+
     if (*remaining_length < 14) {
         fprintf(stderr, "Ethernet packet is too small to be valid\n");
-        return nullptr;
+        goto done;
     }
 
-    struct EthernetPacket* packet = calloc(*remaining_length, 1);
+    packet = calloc(*remaining_length, 1);
     if (!packet) {
         fprintf(stderr, "Failed allocating ethernet packet\n");
-        return nullptr;
+        goto done;
     }
 
     memcpy(packet, pcap_packet.data, *remaining_length);
@@ -110,11 +117,12 @@ struct EthernetPacket* parse_ethernet_packet(struct PCapPacket pcap_packet, size
 
     *remaining_length -= 14;
 
+done:
     return packet;
 }
 
 // Returns nullptr on failure.
-struct TCPPacket* extract_tcp_packet(struct PCapPacket raw_packet, enum LinkLayerType link_type) {
+static struct TCPPacket* extract_tcp_packet(const struct PCapPacket raw_packet, const enum LinkLayerType link_type) {
     struct IPV4Packet* ipv4_packet = nullptr;
     struct EthernetPacket* ethernet_packet = nullptr;
     struct TCPPacket* tcp_packet = nullptr;
@@ -122,7 +130,7 @@ struct TCPPacket* extract_tcp_packet(struct PCapPacket raw_packet, enum LinkLaye
     // Only ethernet is currently supported.
     if (link_type != LINK_LAYER_TYPE_ETHERNET) {
         fprintf(stderr, "Unknown link type %u\n", link_type);
-        goto fail;
+        goto done;
     }
 
     // We'll use this to protect against incorrect asserted sizes causing overflows etc.
@@ -132,50 +140,43 @@ struct TCPPacket* extract_tcp_packet(struct PCapPacket raw_packet, enum LinkLaye
     // Only ethernet is currently supported.
     if (!ethernet_packet) {
         fprintf(stderr, "Failed parsing ethernet packet\n");
-        goto fail;
+        goto done;
     }
 
     // Only IPV4 is currently supported.
     if (ethernet_packet->ether_type != ETHER_TYPE_IPV4) {
         fprintf(stderr, "Unknown ether type %" PRIu16 "\n", ethernet_packet->ether_type);
-        goto fail;
+        goto done;
     }
 
     ipv4_packet = parse_ipv4_packet(ethernet_packet, &remaining_length);
-
     if (!ipv4_packet) {
-        goto fail;
+        goto done;
     }
 
     // Only TCP is currently supported.
     if (ipv4_packet->protocol != PROTOCOL_TCP) {
         fprintf(stderr, "Unknown protocol %" PRIu8 "\n", ipv4_packet->protocol);
-        goto fail;
+        goto done;
     }
 
     tcp_packet = parse_tcp_packet(ipv4_packet, &remaining_length);
-
     if (!tcp_packet) {
-        goto fail;
+        goto done;
     }
 
+done:
     free(ipv4_packet);
     free(ethernet_packet);
     return tcp_packet;
-
-fail:
-    free(tcp_packet);
-    free(ipv4_packet);
-    free(ethernet_packet);
-    return nullptr;
 }
 
 struct TCPConnection* tcpconnectionpool_find_connection(
     struct TCPConnectionPool* pool,
-    uint32_t source_ip,
-    uint32_t destination_ip,
-    uint16_t source_port,
-    uint16_t destination_port
+    const uint32_t source_ip,
+    const uint32_t destination_ip,
+    const uint16_t source_port,
+    const uint16_t destination_port
 ) {
     for (size_t i = 0; i < pool->connection_count; ++i) {
         struct TCPConnection* connection = &pool->connections[i];
@@ -191,15 +192,15 @@ struct TCPConnection* tcpconnectionpool_find_connection(
                 && connection->destination_port == source_port
             )
         ) {
-            return &pool->connections[i];
+            return connection;
         }
     }
 
     return nullptr;
 }
 
-void tcpconnectionpool_push_connection(struct TCPConnectionPool* pool, struct TCPConnection* connection) {
-    if (pool->connection_count >= TCPCONNECTIONPOOL_SIZE) {
+void tcpconnectionpool_push_connection(struct TCPConnectionPool* pool, const struct TCPConnection* connection) {
+    if (pool->connection_count >= TCPCONNECTIONPOOL_MAX_CONNECTIONS) {
         fprintf(stderr, "Pool has too many connections, dropping connection...\n");
         return;
     }
@@ -222,12 +223,15 @@ void tcpconnection_push_packet(struct TCPConnection* connection, struct TCPPacke
 // Parse the network traffic, returning an array of any TCP packets found.
 //
 // Returns nullptr on failure or if no TCP packets were found.
-struct TCPPacket** parse_tcp_packets(struct PCapData* traffic_data, size_t* out_count) {
+struct TCPPacket** parse_tcp_packets(const struct PCapData* traffic_data, size_t* out_count) {
+    struct TCPPacket** output = nullptr;
+
     *out_count = 0;
-    struct TCPPacket** output = malloc(sizeof(*output) * traffic_data->packet_count);
+
+    output = malloc(sizeof(*output) * traffic_data->packet_count);
     if (!output) {
         fprintf(stderr, "Failed allocating TCP packets\n");
-        return nullptr;
+        goto done;
     }
 
     for (size_t i = 0; i < traffic_data->packet_count; ++i) {
@@ -239,5 +243,6 @@ struct TCPPacket** parse_tcp_packets(struct PCapData* traffic_data, size_t* out_
         ++*out_count;
     }
 
+done:
     return output;
 }
