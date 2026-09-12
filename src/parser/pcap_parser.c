@@ -60,7 +60,7 @@ static size_t filedata_count_pcap_packets(const struct FileData* data, enum Endi
     while (file_pos < data->length) {
         ++packets;
 
-        if (data->length <= file_pos+4) {
+        if (data->length < file_pos+4) {
             fprintf(stderr, "File data is corrupt in filedata_count_pcap_packets\n");
             goto done;
         }
@@ -82,6 +82,8 @@ done:
 //
 // Returns 0 on success.
 static int parse_pcap_file_packets(const struct FileData* file_data, struct PCapData* pcap_data_out) {
+    struct PCapPacket* packet = nullptr;
+
     if (file_data->length <= 24) {
         return 0; // No packets to read.
     }
@@ -96,7 +98,7 @@ static int parse_pcap_file_packets(const struct FileData* file_data, struct PCap
     size_t nth_packet = 0;
 
     while (file_pos < file_data->length) {
-        struct PCapPacket* packet = calloc(1, sizeof(struct PCapPacket));
+        packet = calloc(1, sizeof(struct PCapPacket));
         if (!packet) goto fail;
 
         if (file_data->length < file_pos+16) {
@@ -109,11 +111,6 @@ static int parse_pcap_file_packets(const struct FileData* file_data, struct PCap
         memcpy(&packet->size, &file_data->data[file_pos+8], 4);
         memcpy(&packet->original_size, &file_data->data[file_pos+12], 4);
 
-        if (packet->size > pcap_data_out->packet_size_limit) {
-            fprintf(stderr, "Packet has corrupt size header in parse_pcap_file_packets\n");
-            goto fail;
-        }
-
         // Swap endianness if necessary.
         if (pcap_data_out->endianness == ENDIANNESS_BIG) {
             packet->unix_timestamp = __builtin_bswap32(packet->unix_timestamp);
@@ -122,6 +119,10 @@ static int parse_pcap_file_packets(const struct FileData* file_data, struct PCap
             packet->original_size = __builtin_bswap32(packet->original_size);
         }
 
+        if (packet->size > pcap_data_out->packet_size_limit) {
+            fprintf(stderr, "Packet has corrupt size header in parse_pcap_file_packets\n");
+            goto fail;
+        }
         if (file_data->length < file_pos + 16 + packet->size) {
             fprintf(stderr, "Packet capture data is corrupt in parse_pcap_file_packets\n");
             goto fail;
@@ -148,6 +149,7 @@ static int parse_pcap_file_packets(const struct FileData* file_data, struct PCap
     return 0;
 
 fail:
+    free(packet);
     return -1;
 }
 

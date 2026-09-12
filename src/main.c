@@ -29,10 +29,10 @@ int main() {
 
     pcapdata_destroy(pcap_data);
     filedata_destroy(file);
-    return 0;
+    return EXIT_SUCCESS;
 
 fail:
     pcapdata_destroy(pcap_data);
     filedata_destroy(file);
-    return -1;
+    return EXIT_FAILURE;
 }

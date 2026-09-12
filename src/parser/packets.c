@@ -82,13 +82,15 @@ int pcappacket_compare_timestamps(const void* a, const void* b) {
 void pcapdata_destroy(struct PCapData* data) {
     if (!data) return;
     
-    for (size_t i = 0; i < data->packet_count; ++i) {
-        if (data->packets[i]) {
-            if (data->packets[i]->data) free(data->packets[i]->data);
-            free(data->packets[i]);
+    if (data->packets) {
+        for (size_t i = 0; i < data->packet_count; ++i) {
+            if (data->packets[i]) {
+                if (data->packets[i]->data) free(data->packets[i]->data);
+                free(data->packets[i]);
+            }
         }
+        free(data->packets);
     }
 
-    free(data->packets);
     free(data);
 }

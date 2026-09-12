@@ -60,7 +60,7 @@ static struct IPV4Packet* parse_ipv4_packet(
     length = __builtin_bswap16(length);
 
     if (*remaining_length < length) {
-        fprintf(stderr, "IPV4 packet's claimed length is too small to be valid\n");
+        fprintf(stderr, "IPV4's data is too small to be valid\n");
         goto done;
     }
     if (length < 20) {

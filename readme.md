@@ -45,6 +45,7 @@ This is just a coding exercise so there's lots of incorrect assumptions and bugg
 - The packets are ordered by their timestamp. This just so happens to produce correctly ordered byte-streams on the given test data, but in the real world TCP packet ordering is dictated by the sequence number. Actually, I think there's one pair of packets in the same connection that have the same timestamp, so sometimes the output might be wrong, technically speaking (it's an unstable sort).
 - The code assumes the system it is running on will always be little-endian. Big-endian systems are rare, but this program will not work on them.
 - Due to laziness, the maximum number of connections and the number of packets within those connections that the program supports is hard-limited.
+- We don't track when connections finish or reset so theoretically different connections can get treated as the same connection if their ports and IPs match.
 
 ## Compiling
 

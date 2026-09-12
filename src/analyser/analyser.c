@@ -100,7 +100,13 @@ static void print_tcpconnectionpool_byte_streams(const struct TCPConnectionPool*
 
 // Analyses the TCP byte streams within the given data, outputting the information to the console.
 void analyse_tcp_byte_streams(const struct PCapData* data) {
-    struct TCPConnectionPool pool = {0};
+    struct TCPConnectionPool* pool = nullptr;
+
+    pool = calloc(1, sizeof(*pool));
+    if (!pool) {
+        printf("Failed allocating TCP connection pool\n");
+        goto done;
+    }
 
     printf("==============================\n");
     printf("====== TCP Byte Streams ======\n");
@@ -117,14 +123,15 @@ void analyse_tcp_byte_streams(const struct PCapData* data) {
     printf("Found %zu TCP packets (from %" PRIu32 " packets)\n", tcp_packet_count, data->packet_count);
 
     printf("Organising packets by connection...\n");
-    organise_tcp_packets_by_connection(tcp_packet_count, &pool, tcp_packets);
+    organise_tcp_packets_by_connection(tcp_packet_count, pool, tcp_packets);
 
-    printf("Found %zu connections\n", pool.connection_count);
+    printf("Found %zu connections\n", pool->connection_count);
 
     printf("Printing packet streams...\n");
-    print_tcpconnectionpool_byte_streams(&pool);
+    print_tcpconnectionpool_byte_streams(pool);
     
 done:
+    free(pool);
     for (size_t i = 0; i < tcp_packet_count; ++i) {
         free(tcp_packets[i]);
     }
