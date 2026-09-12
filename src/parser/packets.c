@@ -68,17 +68,6 @@ static uint64_t pcappacket_get_combined_timestamp(const struct PCapPacket* packe
     return ((uint64_t)packet->unix_timestamp << 32) | packet->precise_timing;
 }
 
-// a and b are PCapPacket*s.
-int pcappacket_compare_timestamps(const void* a, const void* b) {
-    struct PCapPacket* packet_a = *(struct PCapPacket* const*)a;
-    struct PCapPacket* packet_b = *(struct PCapPacket* const*)b;
-
-    uint64_t packet_a_timestamp = pcappacket_get_combined_timestamp(packet_a);
-    uint64_t packet_b_timestamp = pcappacket_get_combined_timestamp(packet_b);
-
-    return (packet_a_timestamp > packet_b_timestamp) - (packet_a_timestamp < packet_b_timestamp);
-}
-
 void pcapdata_destroy(struct PCapData* data) {
     if (!data) return;
     

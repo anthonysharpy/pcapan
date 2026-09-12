@@ -31,21 +31,23 @@ Some suggested ideas:
 - The source code uses C23, which has a slightly more modern feature set.
 - The code was not designed to handle every possible edge case. While it was written with best-practices in mind, it wasn't validated against anything other than the provided example data. It goes without saying that a lot of functionality might be broken or completely missing with another data set.
 - The input file is hard-coded.
-- Due to time constraints I've not included any tests. If that's something of interest then see my other project at https://github.com/anthonysharpy/nanofill.
-- The TCP byte stream is output as text. Obviously this comes with its own set of issues, but is probably a bit nicer to look at than a big list of numbers.
-- I've not added support for decoding the byte stream protocol. It seems it's just a length header of 5 characters and then the data after that. It's pretty simple so I didn't think there'd be much added value in including it.
-- Due to time constraints I haven't added support for measuring performance/bandwidth. A good example of this also be https://github.com/anthonysharpy/nanofill.
-- The program is not designed to be fast or optimised at all.
-- When we parse a packet, we create a copy of all its data. Obviously the downside is that this is much slower. However from a design perspective it's more friendly because otherwise, if the original data gets freed, and we try and interpret a packet that was derived from it, that's a pretty nasty bug.
+- Due to time constraints I've not included any tests. If that's something of interest then I would definitely recommend my other project at https://github.com/anthonysharpy/nanofill.
+- The TCP byte stream is output as text. Obviously this comes with its own set of issues, but I figured it was more interesting to look at than a big list of numbers.
+- I've not added support for decoding the byte stream protocol. It seems it's just a length header of 5 characters and then the data after that. It's pretty simple in comparison to everything else I've done for this project so I didn't think there'd be much added value in including it.
+- Due to time constraints I haven't added support for measuring performance/bandwidth. A good example of this kind of thing would also be https://github.com/anthonysharpy/nanofill.
+- The program is not designed to be fast and has not been optimised at all.
+- When a packet is parsed (e.g. IPV4 -> TCP), a copy of all of its data is created. Obviously the downside is that this is much slower and takes up a lot of RAM. However from a design perspective one advantage is that it's actually more friendly because otherwise, if the original data gets freed and we try and use a packet that was derived from it, that's a pretty nasty bug. Obviously in the real world you wouldn't take this approach - you would avoid copying as much as possible. But I intentionally wanted to keep it simple for this project.
 
 ## Known Bugs
 
 This is just a coding exercise so there's lots of incorrect assumptions and buggy behaviour. Some of the most serious bugs include:
 
-- The packets are ordered by their timestamp. This just so happens to produce correctly ordered byte-streams on the given test data, but in the real world TCP packet ordering is dictated by the sequence number. Actually, I think there's one pair of packets in the same connection that have the same timestamp, so sometimes the output might be wrong, technically speaking (it's an unstable sort).
-- The code assumes the system it is running on will always be little-endian. Big-endian systems are rare, but this program will not work on them.
+- The packets are ordered by their timestamp. This just so happens to produce correctly ordered byte-streams on the given test data, but in the real world TCP packet ordering is dictated by the sequence number. To be fair though, my intention was to show the "conversation" between the two devices, and because both devices use different sequence numbers, the only way to do that is via timestamps. So I'm not even sure I would call this a bug.
+- The code assumes the system it is running on is always little-endian. This program will not work on big-endian machines. To be fair though, big-endian systems are rare.
 - Due to laziness, the maximum number of connections and the number of packets within those connections that the program supports is hard-limited.
 - We don't track when connections finish or reset so theoretically different connections can get treated as the same connection if their ports and IPs match.
+- Corrupt/incomplete data is not always handled as gracefully as it could be, although there are checks to prevent crashes etc.
+- No support for anything other than TCP.
 
 ## Compiling
 

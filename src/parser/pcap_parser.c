@@ -139,13 +139,6 @@ static int parse_pcap_file_packets(const struct FileData* file_data, struct PCap
         ++nth_packet;
     }
 
-    qsort(
-        pcap_data_out->packets,
-        pcap_data_out->packet_count,
-        sizeof(*pcap_data_out->packets),
-        pcappacket_compare_timestamps
-    );
-
     return 0;
 
 fail:
