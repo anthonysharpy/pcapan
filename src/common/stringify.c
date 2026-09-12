@@ -1,18 +1,33 @@
-#include "types.h"
+#include "stringify.h"
+#include "common/types.h"
+#include <stdint.h>
 #include <string.h>
+#include <stdio.h>
 
-const char* timing_resolution_to_string(enum TimingResolution resolution) {
+char* ip_to_string(const uint32_t ip, char* out_buffer) {
+    sprintf(
+        out_buffer, "%u.%u.%u.%u",
+        (ip >> 24) & 0xFF,
+        (ip >> 16) & 0xFF,
+        (ip >> 8)  & 0xFF,
+        ip & 0xFF
+    );
+
+    return out_buffer;
+}
+
+const char* timingresolution_to_string(const enum PCapTimingResolution resolution) {
     switch (resolution) {
-        case RESOLUTION_MICROSECONDS:
+        case PCAP_RESOLUTION_MICROSECONDS:
             return "microseconds";
-        case RESOLUTION_NANOSECONDS:
+        case PCAP_RESOLUTION_NANOSECONDS:
             return "nanoseconds";
         default:
             return "unknown";
     };
 }
 
-const char* endianness_to_string(enum Endianness endianness) {
+const char* endianness_to_string(const enum Endianness endianness) {
     switch (endianness) {
         case ENDIANNESS_BIG:
             return "big";
@@ -23,11 +38,11 @@ const char* endianness_to_string(enum Endianness endianness) {
     };
 }
 
-const char* link_layer_type_to_string(enum LinkLayerType type) {
+const char* linklayertype_to_string(const enum LinkLayerType type) {
     switch (type) {
-        case ETHERNET:
+        case LINK_LAYER_TYPE_ETHERNET:
             return "ethernet";
-        case NULLTYPE:
+        case LINK_LAYER_TYPE_NULL:
             return "null";
         default:
             return "unknown";
@@ -35,7 +50,7 @@ const char* link_layer_type_to_string(enum LinkLayerType type) {
 }
 
 // This uses a static buffer and so the result should not be re-used. Also not thread-safe.
-const char* tcpflag_to_string(enum TCPFlag flag) {
+const char* tcpflag_to_string(const enum TCPFlag flag) {
     // Enough space for all flags.
     static char out[35];
     out[0] = '\0';

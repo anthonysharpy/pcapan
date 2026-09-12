@@ -18,7 +18,7 @@ struct PCapPacket {
 };
 
 struct PCapData {
-    enum TimingResolution resolution;
+    enum PCapTimingResolution resolution;
     enum Endianness endianness;
     enum LinkLayerType link_layer_type;
     // The size limit the packet capture program used when capturing packets (i.e. any packets originally larger

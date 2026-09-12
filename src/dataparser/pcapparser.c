@@ -1,5 +1,6 @@
 #include "pcapparser.h"
 #include "fileio/fileio.h"
+#include "common/stringify.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,16 +23,16 @@ int parse_pcap_file_header(struct FileData* file_data, struct PCapData* pcap_dat
     // Endianness and timing accuracy.
     if (file_data->data[0] == 0xd4 && file_data->data[1] == 0xc3 && file_data->data[2] == 0xb2 && file_data->data[3] == 0xa1) {
         pcap_data_out->endianness = ENDIANNESS_LITTLE;
-        pcap_data_out->resolution = RESOLUTION_MICROSECONDS;
+        pcap_data_out->resolution = PCAP_RESOLUTION_MICROSECONDS;
     } else if (file_data->data[0] == 0xa1 && file_data->data[1] == 0xb2 && file_data->data[2] == 0xc3 && file_data->data[3] == 0xd4) {
         pcap_data_out->endianness = ENDIANNESS_BIG;
-        pcap_data_out->resolution = RESOLUTION_MICROSECONDS;
+        pcap_data_out->resolution = PCAP_RESOLUTION_MICROSECONDS;
     } else if (file_data->data[0] == 0x4d && file_data->data[1] == 0x3c && file_data->data[2] == 0xb2 && file_data->data[3] == 0xa1) {
         pcap_data_out->endianness = ENDIANNESS_LITTLE;
-        pcap_data_out->resolution = RESOLUTION_NANOSECONDS;
+        pcap_data_out->resolution = PCAP_RESOLUTION_NANOSECONDS;
     } else if (file_data->data[0] == 0xa1 && file_data->data[1] == 0xb2 && file_data->data[2] == 0x3c && file_data->data[3] == 0x4d) {
         pcap_data_out->endianness = ENDIANNESS_BIG;
-        pcap_data_out->resolution = RESOLUTION_NANOSECONDS;
+        pcap_data_out->resolution = PCAP_RESOLUTION_NANOSECONDS;
     } else {
         fprintf(stderr, "Unknown magic number %d %d %d %d\n", file_data->data[0], file_data->data[1], file_data->data[2], file_data->data[3]);
         return -1;
@@ -197,10 +198,10 @@ void analyse_pcap_file(struct PCapData* pcap_data) {
     printf("====== .pcap file Info ======\n");
     printf("==============================\n");
     printf("Version: %d.%d\n", pcap_data->major_version, pcap_data->minor_version);
-    printf("Resolution: %s\n", timing_resolution_to_string(pcap_data->resolution));
+    printf("Resolution: %s\n", timingresolution_to_string(pcap_data->resolution));
     printf("Endianness: %s\n", endianness_to_string(pcap_data->endianness));
     printf("Packet size limit: %d\n", pcap_data->packet_size_limit);
-    printf("Link layer type: %s\n", link_layer_type_to_string(pcap_data->link_layer_type));
+    printf("Link layer type: %s\n", linklayertype_to_string(pcap_data->link_layer_type));
     printf("Packet count: %d\n", pcap_data->packet_count);
     printf("==============================\n\n");
 }

@@ -162,7 +162,7 @@ struct TCPPacket* extract_tcp_packet(struct PCapPacket raw_packet, enum LinkLaye
     struct TCPPacket* tcp_packet = nullptr;
 
     // Only ethernet is currently supported.
-    if (link_type != ETHERNET) {
+    if (link_type != LINK_LAYER_TYPE_ETHERNET) {
         fprintf(stderr, "Unknown link type %u\n", link_type);
         goto fail;
     }
@@ -178,7 +178,7 @@ struct TCPPacket* extract_tcp_packet(struct PCapPacket raw_packet, enum LinkLaye
     }
 
     // Only IPV4 is currently supported.
-    if (ethernet_packet->ether_type != IPV4) {
+    if (ethernet_packet->ether_type != ETHER_TYPE_IPV4) {
         fprintf(stderr, "Unknown ether type %" PRIu16 "\n", ethernet_packet->ether_type);
         goto fail;
     }
@@ -190,7 +190,7 @@ struct TCPPacket* extract_tcp_packet(struct PCapPacket raw_packet, enum LinkLaye
     }
 
     // Only TCP is currently supported.
-    if (ipv4_packet->protocol != TCP) {
+    if (ipv4_packet->protocol != PROTOCOL_TCP) {
         fprintf(stderr, "Unknown protocol %" PRIu8 "\n", ipv4_packet->protocol);
         goto fail;
     }

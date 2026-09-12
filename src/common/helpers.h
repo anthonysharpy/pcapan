@@ -1,11 +1,7 @@
 #pragma once
 
-#include <stdint.h>
-
 // Get the low nibble of a byte.
 #define LOW_NIBBLE(b) ((b) & 0x0F)
 
 // Get the high nibble of a byte.
 #define HIGH_NIBBLE(b) (((b) >> 4) & 0x0F)
-
-char* ip_to_string(uint32_t ip, char* out_buffer);
