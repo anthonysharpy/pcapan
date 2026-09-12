@@ -18,7 +18,7 @@ void analyse_pcap_file(const struct PCapData* pcap_data) {
     printf("==============================\n\n");
 }
 
-void organise_tcp_packets_by_connection(
+static void organise_tcp_packets_by_connection(
     const size_t packet_count,
     struct TCPConnectionPool* pool,
     struct TCPPacket** tcp_packets
@@ -49,7 +49,7 @@ void organise_tcp_packets_by_connection(
     }
 }
 
-void print_tcpconnectionpool_byte_streams(const struct TCPConnectionPool* pool) {
+static void print_tcpconnectionpool_byte_streams(const struct TCPConnectionPool* pool) {
     char ip_buffer_1[16];
     char ip_buffer_2[16];
 
@@ -65,7 +65,7 @@ void print_tcpconnectionpool_byte_streams(const struct TCPConnectionPool* pool) 
 
             size_t packet_size = tcppacket_get_data_length(packet);
 
-            // Arbitrarily name one of the sides of the connection "Incoming" and another "Outgoing".
+            // Print byte stream.
             if (packet->source_ip == connection->source_ip && packet->source_port == connection->source_port) {
                 printf(
                     "\nOutgoing (%zu bytes, %s, #%" PRIu32 ", %s:%" PRIu16 "->%s:%" PRIu16 "): ",
@@ -109,6 +109,10 @@ void analyse_tcp_byte_streams(const struct PCapData* data) {
 
     size_t tcp_packet_count = 0;
     struct TCPPacket** tcp_packets = parse_tcp_packets(data, &tcp_packet_count);
+    if (!tcp_packets) {
+        printf("No TCP packets found\n");
+        goto done;
+    }
 
     printf("Found %zu TCP packets (from %" PRIu32 " packets)\n", tcp_packet_count, data->packet_count);
 
@@ -120,6 +124,7 @@ void analyse_tcp_byte_streams(const struct PCapData* data) {
     printf("Printing packet streams...\n");
     print_tcpconnectionpool_byte_streams(&pool);
     
+done:
     for (size_t i = 0; i < tcp_packet_count; ++i) {
         free(tcp_packets[i]);
     }

@@ -24,7 +24,6 @@ struct TCPConnectionPool {
 };
 
 
-void analyse_tcp_byte_streams(const struct PCapData* data);
 struct TCPPacket** parse_tcp_packets(const struct PCapData* traffic_data, size_t* out_count);
 struct TCPConnection* tcpconnectionpool_find_connection(
     struct TCPConnectionPool* pool,

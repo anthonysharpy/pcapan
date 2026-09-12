@@ -9,7 +9,7 @@
 // Parse a FileData that contains the header of a packet capture file.
 //
 // Returns 0 on success.
-int parse_pcap_file_header(struct FileData* file_data, struct PCapData* pcap_data_out) {
+static int parse_pcap_file_header(const struct FileData* file_data, struct PCapData* pcap_data_out) {
     // Endianness and timing accuracy.
     if (file_data->data[0] == 0xd4 && file_data->data[1] == 0xc3 && file_data->data[2] == 0xb2 && file_data->data[3] == 0xa1) {
         pcap_data_out->endianness = ENDIANNESS_LITTLE;
@@ -52,7 +52,7 @@ int parse_pcap_file_header(struct FileData* file_data, struct PCapData* pcap_dat
     return 0;
 }
 
-size_t filedata_count_pcap_packets(struct FileData* data, enum Endianness endianness) {
+static size_t filedata_count_pcap_packets(const struct FileData* data, enum Endianness endianness) {
     // Start at 24 (skip the header). Then add 8 more to get us to the first length field.
     size_t file_pos = 32;
     size_t packets = 0;
@@ -75,7 +75,7 @@ size_t filedata_count_pcap_packets(struct FileData* data, enum Endianness endian
 // The header information in pcap_data_out must have been populated already.
 //
 // Returns 0 on success.
-int parse_pcap_file_packets(struct FileData* file_data, struct PCapData* pcap_data_out) {
+static int parse_pcap_file_packets(const struct FileData* file_data, struct PCapData* pcap_data_out) {
     if (file_data->length <= 24) {
         return 0; // No packets to read.
     }
@@ -144,7 +144,7 @@ fail:
 // Parse a FileData as a packet capture file.
 //
 // Returns nullptr on failure.
-struct PCapData* parse_pcap_file(struct FileData* file_data) {
+struct PCapData* parse_pcap_file(const struct FileData* file_data) {
     struct PCapData* pcap_data = nullptr;
 
     pcap_data = malloc(sizeof(*pcap_data));
