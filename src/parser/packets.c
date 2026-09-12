@@ -21,8 +21,8 @@ static size_t ipv4packet_get_header_length(const struct IPV4Packet* packet) {
 }
 
 // Find the address where the data begins in an IPV4Packet.
-unsigned char* ipv4packet_get_data_start(const struct IPV4Packet* packet) {
-    return (unsigned char*)packet + ipv4packet_get_header_length(packet);
+const unsigned char* ipv4packet_get_data_start(const struct IPV4Packet* packet) {
+    return (const unsigned char*)packet + ipv4packet_get_header_length(packet);
 }
 
 static size_t tcppacket_get_header_length(const struct TCPPacket* packet) {
@@ -46,10 +46,10 @@ static size_t tcppacket_get_header_length(const struct TCPPacket* packet) {
 }
 
 // Find the address where the data begins in an TCPPacket.
-unsigned char* tcppacket_get_data_start(const struct TCPPacket* packet) {
+const unsigned char* tcppacket_get_data_start(const struct TCPPacket* packet) {
     size_t header_length = tcppacket_get_header_length(packet);
 
-    return (unsigned char*)packet + offsetof(struct TCPPacket, source_port) + header_length;
+    return (const unsigned char*)packet + offsetof(struct TCPPacket, source_port) + header_length;
 }
 
 enum TCPFlag tcppacket_get_flag(const struct TCPPacket* packet) {

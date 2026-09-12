@@ -8,7 +8,7 @@
 #include <stdlib.h>
 
 // Returns nullptr on failure.
-struct TCPPacket* parse_tcp_packet(const struct IPV4Packet* ipv4_packet, size_t* remaining_length) {
+static struct TCPPacket* parse_tcp_packet(const struct IPV4Packet* ipv4_packet, size_t* remaining_length) {
     struct TCPPacket* packet = nullptr;
 
     if (*remaining_length < 20) {
