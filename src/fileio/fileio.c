@@ -2,41 +2,36 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// Open a file, copy its contents into memory and return the data as an out parameter.
+// Open a file and copy its contents into memory.
 //
-// Returns 0 on success.
-int get_file_bytes(char* filename, struct FileData* data_out) {
-    unsigned char* data = nullptr;
+// Returns nullptr on failure.
+struct FileData* get_file_bytes(const char* filename) {
+    struct FileData* file_data = nullptr;
+    FILE* file = nullptr;
 
-    FILE *file = fopen(filename, "rb");
-    if (!file) return -1;
+    file = fopen(filename, "rb");
+    if (!file) goto done;
 
-    if (fseek(file, 0, SEEK_END)) goto fail;
+    if (fseek(file, 0, SEEK_END)) goto done;
 
     long size = ftell(file);
-    if (size < 0) goto fail;
+    if (size < 0) goto done;
 
     rewind(file);
 
-    data = malloc((size_t)size);
-    if (!data) goto fail;
+    file_data = malloc(sizeof(file_data) + (size_t)size);
+    if (!file_data) goto done;
 
-    size_t read = fread(data, 1, (size_t)size, file);
+    size_t read = fread(file_data->data, 1, (size_t)size, file);
+    if (read != (size_t)size) goto done;
 
-    if (read != (size_t)size) goto fail;
+    file_data->length = (size_t)size;
 
-    data_out->data = data;
-    data_out->length = (size_t)size;
-    fclose(file);
-    return 0;
-    
-fail:
-    if (data) free(data);
-    fclose(file);
-    return -1;
+done:
+    if (file) fclose(file);
+    return file_data;
 }
 
-// Free the data used by a FileData struct.
-void cleanup_file_bytes(struct FileData data) {
-    if (data.data) free(data.data);
+void filedata_destroy(struct FileData* file) {
+    free(file);
 }

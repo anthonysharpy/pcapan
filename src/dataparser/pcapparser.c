@@ -4,51 +4,51 @@
 #include <stdlib.h>
 #include <string.h>
 
-void cleanup_pcap_data(struct PCapData data) {
-    for (size_t i = 0; i < data.packet_count; ++i) {
-        if (data.packets[i]) {
-            if (data.packets[i]->data) free(data.packets[i]->data);
-            free(data.packets[i]);
+void pcapdata_destroy(struct PCapData* data) {
+    for (size_t i = 0; i < data->packet_count; ++i) {
+        if (data->packets[i]) {
+            if (data->packets[i]->data) free(data->packets[i]->data);
+            free(data->packets[i]);
         }
     }
 
-    free(data.packets);
+    free(data->packets);
 }
 
 // Parse a FileData that contains the header of a packet capture file.
 //
 // Returns 0 on success.
-int parse_pcap_file_header(struct FileData file_data, struct PCapData* pcap_data_out) {
+int parse_pcap_file_header(struct FileData* file_data, struct PCapData* pcap_data_out) {
     // Endianness and timing accuracy.
-    if (file_data.data[0] == 0xd4 && file_data.data[1] == 0xc3 && file_data.data[2] == 0xb2 && file_data.data[3] == 0xa1) {
+    if (file_data->data[0] == 0xd4 && file_data->data[1] == 0xc3 && file_data->data[2] == 0xb2 && file_data->data[3] == 0xa1) {
         pcap_data_out->endianness = ENDIANNESS_LITTLE;
         pcap_data_out->resolution = RESOLUTION_MICROSECONDS;
-    } else if (file_data.data[0] == 0xa1 && file_data.data[1] == 0xb2 && file_data.data[2] == 0xc3 && file_data.data[3] == 0xd4) {
+    } else if (file_data->data[0] == 0xa1 && file_data->data[1] == 0xb2 && file_data->data[2] == 0xc3 && file_data->data[3] == 0xd4) {
         pcap_data_out->endianness = ENDIANNESS_BIG;
         pcap_data_out->resolution = RESOLUTION_MICROSECONDS;
-    } else if (file_data.data[0] == 0x4d && file_data.data[1] == 0x3c && file_data.data[2] == 0xb2 && file_data.data[3] == 0xa1) {
+    } else if (file_data->data[0] == 0x4d && file_data->data[1] == 0x3c && file_data->data[2] == 0xb2 && file_data->data[3] == 0xa1) {
         pcap_data_out->endianness = ENDIANNESS_LITTLE;
         pcap_data_out->resolution = RESOLUTION_NANOSECONDS;
-    } else if (file_data.data[0] == 0xa1 && file_data.data[1] == 0xb2 && file_data.data[2] == 0x3c && file_data.data[3] == 0x4d) {
+    } else if (file_data->data[0] == 0xa1 && file_data->data[1] == 0xb2 && file_data->data[2] == 0x3c && file_data->data[3] == 0x4d) {
         pcap_data_out->endianness = ENDIANNESS_BIG;
         pcap_data_out->resolution = RESOLUTION_NANOSECONDS;
     } else {
-        fprintf(stderr, "Unknown magic number %d %d %d %d\n", file_data.data[0], file_data.data[1], file_data.data[2], file_data.data[3]);
+        fprintf(stderr, "Unknown magic number %d %d %d %d\n", file_data->data[0], file_data->data[1], file_data->data[2], file_data->data[3]);
         return -1;
     }
 
     // Version numbers.
-    memcpy(&pcap_data_out->major_version, &file_data.data[4], 2);
-    memcpy(&pcap_data_out->minor_version, &file_data.data[6], 2);
+    memcpy(&pcap_data_out->major_version, &file_data->data[4], 2);
+    memcpy(&pcap_data_out->minor_version, &file_data->data[6], 2);
 
     // Ignore timezone as apparently this is rarely used (bytes 8-11).
     // Ignore sigfigs for same reason (12-15).
 
     // Max bytes captured per packet.
-    memcpy(&pcap_data_out->packet_size_limit, &file_data.data[16], 4);
+    memcpy(&pcap_data_out->packet_size_limit, &file_data->data[16], 4);
 
     // Link-layer type.
-    memcpy(&pcap_data_out->link_layer_type, &file_data.data[20], 4);
+    memcpy(&pcap_data_out->link_layer_type, &file_data->data[20], 4);
 
     // Swap endianness if necessary.
     if (pcap_data_out->endianness == ENDIANNESS_BIG) {
@@ -98,12 +98,12 @@ size_t filedata_count_pcap_packets(struct FileData* data, enum Endianness endian
 // The header information in pcap_data_out must have been populated already.
 //
 // Returns 0 on success.
-int parse_pcap_file_packets(struct FileData file_data, struct PCapData* pcap_data_out) {
-    if (file_data.length <= 24) {
+int parse_pcap_file_packets(struct FileData* file_data, struct PCapData* pcap_data_out) {
+    if (file_data->length <= 24) {
         return 0; // No packets to read.
     }
 
-    pcap_data_out->packet_count = (uint32_t)filedata_count_pcap_packets(&file_data, pcap_data_out->endianness);
+    pcap_data_out->packet_count = (uint32_t)filedata_count_pcap_packets(file_data, pcap_data_out->endianness);
 
     // Now create the packets.
     pcap_data_out->packets = calloc(pcap_data_out->packet_count, sizeof(struct PCapPacket*));
@@ -112,19 +112,19 @@ int parse_pcap_file_packets(struct FileData file_data, struct PCapData* pcap_dat
     size_t file_pos = 24;
     size_t nth_packet = 0;
 
-    while (file_pos < file_data.length) {
+    while (file_pos < file_data->length) {
         struct PCapPacket* packet = calloc(1, sizeof(struct PCapPacket));
         if (!packet) goto fail;
 
-        if (file_data.length <= file_pos+16) {
+        if (file_data->length <= file_pos+16) {
             fprintf(stderr, "Packet capture data is is corrupt\n");
             goto fail;
         }
 
-        memcpy(&packet->unix_timestamp, &file_data.data[file_pos], 4);
-        memcpy(&packet->precise_timing, &file_data.data[file_pos+4], 4);
-        memcpy(&packet->size, &file_data.data[file_pos+8], 4);
-        memcpy(&packet->original_size, &file_data.data[file_pos+12], 4);
+        memcpy(&packet->unix_timestamp, &file_data->data[file_pos], 4);
+        memcpy(&packet->precise_timing, &file_data->data[file_pos+4], 4);
+        memcpy(&packet->size, &file_data->data[file_pos+8], 4);
+        memcpy(&packet->original_size, &file_data->data[file_pos+12], 4);
 
         // Swap endianness if necessary.
         if (pcap_data_out->endianness == ENDIANNESS_BIG) {
@@ -137,12 +137,12 @@ int parse_pcap_file_packets(struct FileData file_data, struct PCapData* pcap_dat
         packet->data = malloc(packet->size);
         if (!packet->data) goto fail;
 
-        if (file_data.length <= file_pos+packet->size) {
+        if (file_data->length <= file_pos+packet->size) {
             fprintf(stderr, "Packet capture data is is corrupt\n");
             goto fail;
         }
 
-        memcpy(packet->data, &file_data.data[file_pos+16], packet->size);
+        memcpy(packet->data, &file_data->data[file_pos+16], packet->size);
 
         pcap_data_out->packets[nth_packet] = packet;
 
@@ -160,29 +160,47 @@ int parse_pcap_file_packets(struct FileData file_data, struct PCapData* pcap_dat
     return 0;
 
 fail:
-    cleanup_pcap_data(*pcap_data_out);
+    pcapdata_destroy(pcap_data_out);
     return -1;
 }
 
 // Parse a FileData as a packet capture file.
 //
-// Returns 0 on success.
-int parse_pcap_file(struct FileData file_data, struct PCapData* pcap_data_out) {
-    if (file_data.length < 24) {
+// Returns nullptr on failure.
+struct PCapData* parse_pcap_file(struct FileData* file_data) {
+    struct PCapData* pcap_data = nullptr;
+
+    pcap_data = malloc(sizeof(*pcap_data));
+    if (!pcap_data) goto done;
+
+    if (file_data->length < 24) {
         fprintf(stderr, "File is too small to be a .pcap file\n");
-        return -1;
+        goto done;
     }
 
-    if (parse_pcap_file_header(file_data, pcap_data_out)) {
+    if (parse_pcap_file_header(file_data, pcap_data)) {
         fprintf(stderr, "Failed parsing .pcap file header\n");
-        return -1;
+        goto done;
     }
 
-    if (parse_pcap_file_packets(file_data, pcap_data_out)) {
+    if (parse_pcap_file_packets(file_data, pcap_data)) {
         fprintf(stderr, "Failed parsing .pcap file packets\n");
-        return -1;
+        goto done;
     }
 
-    return 0;
+done:
+    return pcap_data;
 }
 
+void analyse_pcap_file(struct PCapData* pcap_data) {
+    printf("==============================\n");
+    printf("====== .pcap file Info ======\n");
+    printf("==============================\n");
+    printf("Version: %d.%d\n", pcap_data->major_version, pcap_data->minor_version);
+    printf("Resolution: %s\n", timing_resolution_to_string(pcap_data->resolution));
+    printf("Endianness: %s\n", endianness_to_string(pcap_data->endianness));
+    printf("Packet size limit: %d\n", pcap_data->packet_size_limit);
+    printf("Link layer type: %s\n", link_layer_type_to_string(pcap_data->link_layer_type));
+    printf("Packet count: %d\n", pcap_data->packet_count);
+    printf("==============================\n\n");
+}

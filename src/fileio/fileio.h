@@ -4,9 +4,9 @@
 
 // Simple wrapper for file data stored in memory.
 struct FileData {
-    unsigned char* data;
     size_t length;
+    unsigned char data[];
 };
 
-int get_file_bytes(char* filename, struct FileData* data_out);
-void cleanup_file_bytes(struct FileData data);
+struct FileData* get_file_bytes(const char* filename);
+void filedata_destroy(struct FileData* file);

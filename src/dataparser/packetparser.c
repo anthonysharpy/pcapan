@@ -215,16 +215,16 @@ fail:
 // Parse the network traffic, returning an array of any TCP packets found.
 //
 // Returns nullptr on failure or if no TCP packets were found.
-struct TCPPacket** parse_tcp_packets(struct PCapData traffic_data, size_t* out_count) {
+struct TCPPacket** parse_tcp_packets(struct PCapData* traffic_data, size_t* out_count) {
     *out_count = 0;
-    struct TCPPacket** output = malloc(sizeof(*output) * traffic_data.packet_count);
+    struct TCPPacket** output = malloc(sizeof(*output) * traffic_data->packet_count);
     if (!output) {
         fprintf(stderr, "Failed allocating TCP packets\n");
         return nullptr;
     }
 
-    for (size_t i = 0; i < traffic_data.packet_count; ++i) {
-        struct TCPPacket* packet = extract_tcp_packet(*traffic_data.packets[i], traffic_data.link_layer_type);
+    for (size_t i = 0; i < traffic_data->packet_count; ++i) {
+        struct TCPPacket* packet = extract_tcp_packet(*traffic_data->packets[i], traffic_data->link_layer_type);
 
         if (!packet) continue;
         

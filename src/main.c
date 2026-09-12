@@ -7,37 +7,26 @@
 #include <stdlib.h>
 
 int main() {
-    struct FileData file = {0};
-    struct PCapData pcapdata = {0};
+    struct FileData* file = nullptr;
+    struct PCapData* pcap_data;
 
-    if (get_file_bytes("64x8burst_eth2.pcap", &file)) {
+    file = get_file_bytes("64x8burst_eth2.pcap");
+    if (!file) {
         fprintf(stderr, "Failed getting file bytes\n");
-        goto fail;
+        goto done;
     }
 
-    if (parse_pcap_file(file, &pcapdata)) {
+    pcap_data = parse_pcap_file(file);
+    if (!pcap_data) {
         fprintf(stderr, "Failed parsing pcap file\n");
-        goto fail;
+        goto done;
     }
 
-    printf("==============================\n");
-    printf("====== .pcap file Info ======\n");
-    printf("==============================\n");
-    printf("Version: %d.%d\n", pcapdata.major_version, pcapdata.minor_version);
-    printf("Resolution: %s\n", timing_resolution_to_string(pcapdata.resolution));
-    printf("Endianness: %s\n", endianness_to_string(pcapdata.endianness));
-    printf("Packet size limit: %d\n", pcapdata.packet_size_limit);
-    printf("Link layer type: %s\n", link_layer_type_to_string(pcapdata.link_layer_type));
-    printf("Packet count: %d\n", pcapdata.packet_count);
-    printf("==============================\n");
-    printf("\n");
-    analyse_tcp_byte_streams(pcapdata);
+    analyse_pcap_file(pcap_data);
+    analyse_tcp_byte_streams(pcap_data);
 
-    cleanup_file_bytes(file);
-    cleanup_pcap_data(pcapdata);
+done:
+    pcapdata_destroy(pcap_data);
+    filedata_destroy(file);
     return 0;
-
-fail:
-    cleanup_file_bytes(file);
-    return -1;
 }

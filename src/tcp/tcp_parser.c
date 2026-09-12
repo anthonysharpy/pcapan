@@ -155,7 +155,7 @@ void print_tcpconnectionpool_byte_streams(struct TCPConnectionPool* pool) {
 }
 
 // Analyses the TCP byte streams within the given data, outputting the information to the console.
-void analyse_tcp_byte_streams(struct PCapData data) {
+void analyse_tcp_byte_streams(struct PCapData* data) {
     struct TCPConnectionPool pool = {0};
 
     printf("==============================\n");
@@ -166,7 +166,7 @@ void analyse_tcp_byte_streams(struct PCapData data) {
     size_t tcp_packet_count = 0;
     struct TCPPacket** tcp_packets = parse_tcp_packets(data, &tcp_packet_count);
 
-    printf("Found %zu TCP packets (from %" PRIu32 " packets)\n", tcp_packet_count, data.packet_count);
+    printf("Found %zu TCP packets (from %" PRIu32 " packets)\n", tcp_packet_count, data->packet_count);
 
     printf("Organising packets by connection...\n");
     organise_tcp_packets_by_connection(tcp_packet_count, &pool, tcp_packets);
