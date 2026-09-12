@@ -60,6 +60,11 @@ static size_t filedata_count_pcap_packets(const struct FileData* data, enum Endi
     while (file_pos < data->length) {
         ++packets;
 
+        if (data->length <= file_pos+4) {
+            fprintf(stderr, "File data is corrupt in filedata_count_pcap_packets\n");
+            goto done;
+        }
+
         size_t data_length = 0;
         memcpy(&data_length, &data->data[file_pos], 4);
 
@@ -68,6 +73,7 @@ static size_t filedata_count_pcap_packets(const struct FileData* data, enum Endi
         file_pos += 16 + data_length;
     }
 
+done:
     return packets;
 }
 
@@ -93,8 +99,8 @@ static int parse_pcap_file_packets(const struct FileData* file_data, struct PCap
         struct PCapPacket* packet = calloc(1, sizeof(struct PCapPacket));
         if (!packet) goto fail;
 
-        if (file_data->length <= file_pos+16) {
-            fprintf(stderr, "Packet capture data is is corrupt\n");
+        if (file_data->length < file_pos+16) {
+            fprintf(stderr, "Packet capture data is is corrupt in parse_pcap_file_packets\n");
             goto fail;
         }
 
@@ -111,13 +117,13 @@ static int parse_pcap_file_packets(const struct FileData* file_data, struct PCap
             packet->original_size = __builtin_bswap32(packet->original_size);
         }
 
-        packet->data = malloc(packet->size);
-        if (!packet->data) goto fail;
-
-        if (file_data->length <= file_pos+packet->size) {
-            fprintf(stderr, "Packet capture data is is corrupt\n");
+        if (file_data->length < file_pos + 16 + packet->size) {
+            fprintf(stderr, "Packet capture data is corrupt in parse_pcap_file_packets\n");
             goto fail;
         }
+        
+        packet->data = malloc(packet->size);
+        if (!packet->data) goto fail;
 
         memcpy(packet->data, &file_data->data[file_pos+16], packet->size);
 
@@ -148,7 +154,7 @@ struct PCapData* parse_pcap_file(const struct FileData* file_data, bool* out_suc
     struct PCapData* pcap_data = nullptr;
     *out_success = false;
 
-    pcap_data = malloc(sizeof(*pcap_data));
+    pcap_data = calloc(1, sizeof(*pcap_data));
     if (!pcap_data) goto done;
 
     if (file_data->length < 24) {

@@ -9,12 +9,12 @@ void analyse_pcap_file(const struct PCapData* pcap_data) {
     printf("==============================\n");
     printf("====== .pcap file Info ======\n");
     printf("==============================\n");
-    printf("Version: %d.%d\n", pcap_data->major_version, pcap_data->minor_version);
+    printf("Version: %" PRIu16 ".%" PRIu16 "\n", pcap_data->major_version, pcap_data->minor_version);
     printf("Resolution: %s\n", timingresolution_to_string(pcap_data->resolution));
     printf("Endianness: %s\n", endianness_to_string(pcap_data->endianness));
-    printf("Packet size limit: %d\n", pcap_data->packet_size_limit);
+    printf("Packet size limit: %" PRIu32 "\n", pcap_data->packet_size_limit);
     printf("Link layer type: %s\n", linklayertype_to_string(pcap_data->link_layer_type));
-    printf("Packet count: %d\n", pcap_data->packet_count);
+    printf("Packet count: %" PRIu32 "\n", pcap_data->packet_count);
     printf("==============================\n\n");
 }
 

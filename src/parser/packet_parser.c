@@ -40,9 +40,14 @@ done:
     return packet;
 }
 
-// Returns nullptr on failure.
-static struct IPV4Packet* parse_ipv4_packet(const struct EthernetPacket* ethernet_packet, size_t* remaining_length) {
+// out_success dictates whether the method failed. Regardless, the caller must free the result.
+static struct IPV4Packet* parse_ipv4_packet(
+    const struct EthernetPacket* ethernet_packet,
+    size_t* remaining_length,
+    bool* out_success
+) {
     struct IPV4Packet* packet = nullptr;
+    *out_success = false;
 
     if (*remaining_length < 20) {
         fprintf(stderr, "IPV4 packet is too small to be valid\n");
@@ -91,6 +96,8 @@ static struct IPV4Packet* parse_ipv4_packet(const struct EthernetPacket* etherne
     // Here we use the length of the IPV4 packet as an authoritative source
     // to correct it.
     *remaining_length = length - header_length;
+
+    *out_success = true;
 
 done:
     return packet;
@@ -149,8 +156,10 @@ static struct TCPPacket* extract_tcp_packet(const struct PCapPacket raw_packet, 
         goto done;
     }
 
-    ipv4_packet = parse_ipv4_packet(ethernet_packet, &remaining_length);
-    if (!ipv4_packet) {
+    bool success = false;
+    ipv4_packet = parse_ipv4_packet(ethernet_packet, &remaining_length, &success);
+    if (!success) {
+        fprintf(stderr, "Parsing IPV4 packet failed\n");
         goto done;
     }
 

@@ -3,12 +3,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// Find the address where the data begins in an IPV4Packet.
-unsigned char* ipv4packet_get_data_start(const struct IPV4Packet* packet) {
+static size_t ipv4packet_get_header_length(const struct IPV4Packet* packet) {
     unsigned ihl = LOW_NIBBLE(packet->version_and_ihl);
     size_t header_length = ihl * 4;
 
-    return (unsigned char*)packet + header_length;
+     // Avoid corrupt header lengths causing UB.
+    if (header_length < 20) {
+        fprintf(stderr, "IPV4Packet has corrupt header length of %zu, truncating to 20...\n", header_length);
+        return 20;
+    }
+    // Avoid corrupt header lengths causing UB.
+    if (header_length > 60) {
+        fprintf(stderr, "IPV4Packet has corrupt header length of %zu, truncating to 60...\n", header_length);
+        return 60;
+    }
+
+    return header_length;
+}
+
+// Find the address where the data begins in an IPV4Packet.
+unsigned char* ipv4packet_get_data_start(const struct IPV4Packet* packet) {
+    return (unsigned char*)packet + ipv4packet_get_header_length(packet);
 }
 
 static size_t tcppacket_get_header_length(const struct TCPPacket* packet) {
@@ -63,6 +78,8 @@ int pcappacket_compare_timestamps(const void* a, const void* b) {
 }
 
 void pcapdata_destroy(struct PCapData* data) {
+    if (!data) return;
+    
     for (size_t i = 0; i < data->packet_count; ++i) {
         if (data->packets[i]) {
             if (data->packets[i]->data) free(data->packets[i]->data);
@@ -71,4 +88,5 @@ void pcapdata_destroy(struct PCapData* data) {
     }
 
     free(data->packets);
+    free(data);
 }
