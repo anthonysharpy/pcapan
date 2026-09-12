@@ -16,8 +16,9 @@ int main() {
         goto done;
     }
 
-    pcap_data = parse_pcap_file(file);
-    if (!pcap_data) {
+    bool success = false;
+    pcap_data = parse_pcap_file(file, &success);
+    if (!success) {
         fprintf(stderr, "Failed parsing pcap file\n");
         goto done;
     }

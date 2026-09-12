@@ -137,15 +137,16 @@ static int parse_pcap_file_packets(const struct FileData* file_data, struct PCap
     return 0;
 
 fail:
-    pcapdata_destroy(pcap_data_out);
     return -1;
 }
 
 // Parse a FileData as a packet capture file.
 //
-// Returns nullptr on failure.
-struct PCapData* parse_pcap_file(const struct FileData* file_data) {
+// out_success dictates whether the function failed or not. Regardless, the caller must free
+// the returned data.
+struct PCapData* parse_pcap_file(const struct FileData* file_data, bool* out_success) {
     struct PCapData* pcap_data = nullptr;
+    *out_success = false;
 
     pcap_data = malloc(sizeof(*pcap_data));
     if (!pcap_data) goto done;
@@ -164,6 +165,8 @@ struct PCapData* parse_pcap_file(const struct FileData* file_data) {
         fprintf(stderr, "Failed parsing .pcap file packets\n");
         goto done;
     }
+
+    *out_success = true;
 
 done:
     return pcap_data;
