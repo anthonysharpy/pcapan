@@ -113,7 +113,8 @@ void print_tcpconnectionpool_byte_streams(struct TCPConnectionPool* pool) {
         struct TCPConnection* connection = &pool->connections[c];
 
         printf("\n=============================\n");
-        printf("======= Connection %zu =======", c+1);
+        printf("======= Connection %zu =======\n", c+1);
+        printf("=============================");
 
         for (size_t p = 0; p < connection->packet_count; ++p) {
             struct TCPPacket* packet = pool->connections[c].packets[p];
@@ -149,7 +150,7 @@ void print_tcpconnectionpool_byte_streams(struct TCPConnectionPool* pool) {
         }
 
         printf("\n=============================\n");
-        printf("=============================\n");
+        printf("=============================\n\n\n");
     }
 }
 

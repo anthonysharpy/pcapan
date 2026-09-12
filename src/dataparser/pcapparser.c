@@ -103,7 +103,7 @@ int parse_pcap_file_packets(struct FileData file_data, struct PCapData* pcap_dat
         return 0; // No packets to read.
     }
 
-    pcap_data_out->packet_count = filedata_count_pcap_packets(&file_data, pcap_data_out->endianness);
+    pcap_data_out->packet_count = (uint32_t)filedata_count_pcap_packets(&file_data, pcap_data_out->endianness);
 
     // Now create the packets.
     pcap_data_out->packets = calloc(pcap_data_out->packet_count, sizeof(struct PCapPacket*));
