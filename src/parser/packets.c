@@ -63,11 +63,6 @@ size_t tcppacket_get_data_length(const struct TCPPacket* packet) {
     return packet->options_and_data_length - (header_length - 20);
 }
 
-
-static uint64_t pcappacket_get_combined_timestamp(const struct PCapPacket* packet) {
-    return ((uint64_t)packet->unix_timestamp << 32) | packet->precise_timing;
-}
-
 void pcapdata_destroy(struct PCapData* data) {
     if (!data) return;
     
