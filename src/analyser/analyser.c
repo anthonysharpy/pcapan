@@ -101,6 +101,7 @@ static void print_tcpconnectionpool_byte_streams(const struct TCPConnectionPool*
 // Analyses the TCP byte streams within the given data, outputting the information to the console.
 void analyse_tcp_byte_streams(const struct PCapData* data) {
     struct TCPConnectionPool* pool = nullptr;
+    struct TCPPacket** tcp_packets = nullptr;
 
     pool = calloc(1, sizeof(*pool));
     if (!pool) {
@@ -114,7 +115,7 @@ void analyse_tcp_byte_streams(const struct PCapData* data) {
     printf("Finding TCP packets...\n");
 
     size_t tcp_packet_count = 0;
-    struct TCPPacket** tcp_packets = parse_tcp_packets(data, &tcp_packet_count);
+    tcp_packets = parse_tcp_packets(data, &tcp_packet_count);
     if (!tcp_packets) {
         printf("No TCP packets found\n");
         goto done;
@@ -132,8 +133,10 @@ void analyse_tcp_byte_streams(const struct PCapData* data) {
     
 done:
     free(pool);
-    for (size_t i = 0; i < tcp_packet_count; ++i) {
-        free(tcp_packets[i]);
+    if (tcp_packets) {
+        for (size_t i = 0; i < tcp_packet_count; ++i) {
+            free(tcp_packets[i]);
+        }
+        free(tcp_packets);
     }
-    free(tcp_packets);
 }
