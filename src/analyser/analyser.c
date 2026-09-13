@@ -1,9 +1,11 @@
 #include "analyser.h"
 #include "common/stringify.h"
+#include "common/helpers.h"
 #include "parser/packet_parser.h"
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <float.h>
 
 void analyse_pcap_file(const struct PCapData* pcap_data) {
     printf("==============================\n");
@@ -96,6 +98,32 @@ static void print_tcpconnectionpool_byte_streams(const struct TCPConnectionPool*
         printf("\n=============================\n");
         printf("=============================\n\n");
     }
+}
+
+void analyse_bandwidth(const struct PCapData* data) {
+    size_t total_traffic_bytes = 0;
+    for (size_t i = 0; i < data->packet_count; ++i) {
+        total_traffic_bytes += data->packets[i]->size;
+    }
+
+    double min_time = DBL_MAX;
+    double max_time = 0;
+    for (size_t i = 0; i < data->packet_count; ++i) {
+        double timestamp = pcappacket_get_timestamp(data, data->packets[i]);
+        if (timestamp > max_time) max_time = timestamp;
+        if (timestamp < min_time) min_time = timestamp;
+    }
+    double duration_seconds = max_time - min_time;
+
+    double average_bandwidth = BYTES_TO_KILOBYTES(total_traffic_bytes) / duration_seconds;
+
+    printf("==============================\n");
+    printf("====== Traffic Analysis ======\n");
+    printf("==============================\n");
+    printf("Total traffic: %.2fkB\n", BYTES_TO_KILOBYTES(total_traffic_bytes));
+    printf("Duration: %.2fs\n", duration_seconds);
+    printf("Average bandwidth: %.2fkB/s\n", average_bandwidth);
+    printf("==============================\n\n");
 }
 
 // Analyses the TCP byte streams within the given data, outputting the information to the console.
