@@ -101,6 +101,8 @@ static void print_tcpconnectionpool_byte_streams(const struct TCPConnectionPool*
 }
 
 void analyse_bandwidth(const struct PCapData* data) {
+    double average_bandwidth = 0;
+
     size_t total_traffic_bytes = 0;
     for (size_t i = 0; i < data->packet_count; ++i) {
         total_traffic_bytes += data->packets[i]->size;
@@ -115,7 +117,9 @@ void analyse_bandwidth(const struct PCapData* data) {
     }
     double duration_seconds = max_time - min_time;
 
-    double average_bandwidth = BYTES_TO_KILOBYTES(total_traffic_bytes) / duration_seconds;
+    if (duration_seconds != 0) {
+        average_bandwidth = BYTES_TO_KILOBYTES(total_traffic_bytes) / duration_seconds;
+    }
 
     printf("==============================\n");
     printf("====== Traffic Analysis ======\n");

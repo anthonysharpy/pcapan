@@ -47,6 +47,8 @@ This is just a coding exercise so there's lots of incorrect assumptions and bugg
 - We don't track when connections finish or reset so theoretically different connections can get treated as the same connection if their ports and IPs match.
 - Corrupt/incomplete data is not always handled as gracefully as it could be, although there are checks to prevent crashes etc.
 - No support for anything other than TCP.
+- Because the byte stream is interpreted as text and output to the console, it sometimes corrupts the console output very slightly.
+- `analyse_bandwidth` will produce garbage output in some extreme scenarios (e.g. all packets have exact same timestamp).
 
 ## Compiling
 
