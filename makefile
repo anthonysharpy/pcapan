@@ -1,9 +1,9 @@
-GCCVERSION := gcc-15
+GCCVERSION := gcc-13
 OPT := -O3 -march=native -flto=auto -funroll-loops -pipe
 WARN := -Wall -Wextra -Wshadow -Wconversion -Wvla -Wpedantic -Wformat=2 \
         -Wmissing-prototypes -Wcast-qual
-CFLAGS := -std=c23 $(OPT) $(WARN) -DNDEBUG -Isrc
-LDFLAGS := -std=c23 $(OPT)
+CFLAGS := -std=c2x $(OPT) $(WARN) -DNDEBUG -Isrc
+LDFLAGS := -std=c2x $(OPT)
 
 SRCS := $(shell find src -name '*.c')
 OBJS := $(SRCS:src/%.c=build/%.o)

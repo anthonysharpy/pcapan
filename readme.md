@@ -1,16 +1,6 @@
 ## Prerequisites
 
-- This C program uses C23 and is compiled using GCC 15 on Linux. With some modifications to the makefile, this program will compile on older versions of GCC, but it's probably best if you just update to GCC 15 if you haven't already:
-
-```
-gcc -v # Check version
-```
-
-```
-sudo apt install gcc-15
-```
-
-The GCC version can be changed in the makefile if you don't want to use GCC 15 (`GCCVERSION` variable).
+This C program uses C23 and is compiled using GCC 13 on Linux. With some modifications to the makefile, this program might compile on older versions of GCC (the GCC version can be changed in the makefile [`GCCVERSION` variable]).
 
 ## Original Task
 
