@@ -283,7 +283,7 @@ void tcpconnection_push_packet(struct TCPConnection* connection, struct TCPPacke
 
 // Parse the network traffic, returning an array of any TCP packets found.
 //
-// Returns nullptr on failure or if no packets found.
+// Returns nullptr on failure.
 struct TCPPacket** parse_tcp_packets(const struct PCapData* traffic_data, size_t* out_count) {
     struct TCPPacket** output = nullptr;
     bool success = false;
