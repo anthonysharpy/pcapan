@@ -9,9 +9,9 @@ struct PCapPacket {
     // Microseconds or nanoseconds (depending on the .pcap file's resolution) after the value given by
     // unix_timestamp;
     uint32_t precise_timing;
-    // Size in bytes of the data.
+    // Size of `data` in bytes.
     uint32_t size;
-    // The original size of the data packet before it was truncated, or the same as size if it wasn't
+    // The original size of the data packet before it was truncated in bytes, or the same as `size` if it wasn't
     // truncated.
     uint32_t original_size;
     unsigned char* data;
@@ -35,7 +35,8 @@ struct __attribute__((packed)) EthernetPacket {
     uint8_t source_mac_address[6];
     enum EtherType ether_type;
     unsigned char* data;
-    size_t data_length;
+    // The size of `data` in bytes.
+    uint32_t data_length;
 };
 
 // Header length is IHL * 4.
@@ -52,7 +53,12 @@ struct __attribute__((packed)) IPV4Packet {
     uint16_t checksum;
     uint32_t source_ip;
     uint32_t destination_ip;
-    unsigned char options_and_data[];
+    unsigned char* options;
+    unsigned char* data;
+    // The size of `options` in bytes.
+    uint32_t options_length;
+    // The size of `data` in bytes.
+    uint32_t data_length;
 };
 
 // The packet will have options if header length > 20.
@@ -81,6 +87,5 @@ struct __attribute__((packed)) TCPPacket {
 const unsigned char* tcppacket_get_data_start(const struct TCPPacket* packet);
 size_t tcppacket_get_data_length(const struct TCPPacket* packet);
 enum TCPFlag tcppacket_get_flag(const struct TCPPacket* packet);
-const unsigned char* ipv4packet_get_data_start(const struct IPV4Packet* packet);
 void pcapdata_destroy(struct PCapData* data);
 double pcappacket_get_timestamp(const struct PCapData* container, const struct PCapPacket* packet);

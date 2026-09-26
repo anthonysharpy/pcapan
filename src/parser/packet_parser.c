@@ -8,10 +8,10 @@
 #include <stdlib.h>
 
 // Returns nullptr on failure.
-static struct TCPPacket* parse_tcp_packet(const struct IPV4Packet* ipv4_packet, size_t* remaining_length) {
+static struct TCPPacket* parse_tcp_packet(const struct IPV4Packet* ipv4_packet) {
     struct TCPPacket* packet = nullptr;
 
-    if (*remaining_length < 20) {
+    if (ipv4_packet->data_length < 20) {
         fprintf(stderr, "TCP packet is too small to be valid\n");
         goto done;
     }
@@ -19,13 +19,13 @@ static struct TCPPacket* parse_tcp_packet(const struct IPV4Packet* ipv4_packet, 
     // We have custom IP fields at the start of the struct that we don't want to copy into.
     constexpr size_t tcppacket_start_offset = offsetof(struct TCPPacket, source_port);
 
-    packet = calloc(1, *remaining_length + tcppacket_start_offset);
+    packet = calloc(1, ipv4_packet->data_length + tcppacket_start_offset);
     if (!packet) goto done;
 
-    memcpy((unsigned char*)packet + tcppacket_start_offset, ipv4packet_get_data_start(ipv4_packet), *remaining_length);
+    memcpy((unsigned char*)packet + tcppacket_start_offset, ipv4_packet->data, ipv4_packet->data_length);
     packet->source_ip = ipv4_packet->source_ip;
     packet->destination_ip = ipv4_packet->destination_ip;
-    packet->options_and_data_length = *remaining_length - 20;
+    packet->options_and_data_length = ipv4_packet->data_length - 20;
     
     packet->source_port = __builtin_bswap16(packet->source_port);
     packet->destination_port = __builtin_bswap16(packet->destination_port);
@@ -41,37 +41,38 @@ done:
 }
 
 // out_success dictates whether the method failed. Regardless, the caller must free the result.
-static struct IPV4Packet* parse_ipv4_packet(
-    const struct EthernetPacket* ethernet_packet,
-    size_t* remaining_length,
-    bool* out_success
-) {
+// On failure, the output is undefined.
+static struct IPV4Packet* parse_ipv4_packet(const struct EthernetPacket* ethernet_packet, bool* out_success) {
     struct IPV4Packet* packet = nullptr;
     *out_success = false;
 
-    if (*remaining_length < 20) {
+    if (ethernet_packet->data_length < 20) {
         fprintf(stderr, "IPV4 packet is too small to be valid\n");
         goto done;
     }
 
-    // Check length.
-    uint16_t length = 0;
-    memcpy(&length, &ethernet_packet->data[2], 2);
-    length = __builtin_bswap16(length);
 
-    if (*remaining_length < length) {
-        fprintf(stderr, "IPV4's data is too small to be valid\n");
+    uint16_t total_length = 0;
+    memcpy(&total_length, &ethernet_packet->data[2], 2);
+    total_length = __builtin_bswap16(total_length);
+
+    if (total_length > ethernet_packet->data_length) {
+        fprintf(stderr,  "IPV4 packet's claimed length is impossibly large\n");
         goto done;
     }
-    if (length < 20) {
+    if (total_length < 20) {
         fprintf(stderr, "IPV4 packet's claimed length is too small to be valid\n");
         goto done;
     }
 
-    packet = malloc(length);
-    if (!packet) goto done;
+    packet = malloc(sizeof(*packet));
+    if (!packet)  {
+        fprintf(stderr, "Failed allocating IPV4 packet\n");
+        goto done;
+    }
 
-    memcpy(packet, ethernet_packet->data, length);
+    // Copy metadata.
+    memcpy(packet, ethernet_packet->data, 20);
 
     packet->source_ip = __builtin_bswap32(packet->source_ip);
     packet->destination_ip = __builtin_bswap32(packet->destination_ip);
@@ -80,22 +81,32 @@ static struct IPV4Packet* parse_ipv4_packet(
     packet->flags_and_offset = __builtin_bswap16(packet->flags_and_offset);
     packet->identification = __builtin_bswap16(packet->identification);
 
-    uint8_t ihl = LOW_NIBBLE(packet->version_and_ihl);
-    size_t header_length = ihl * 4;
-
+    uint32_t header_length = LOW_NIBBLE(packet->version_and_ihl) * 4;
+    
     if (header_length < 20) {
         fprintf(stderr, "IPV4 packet has impossibly small header length\n");
         goto done;
     }
-    if (header_length > length) {
+    if (header_length > total_length) {
         fprintf(stderr, "IPV4 header length exceeds total length\n");
         goto done;
     }
 
-    // An ethernet packet can be padded with extra bytes if it's small.
-    // Here we use the length of the IPV4 packet as an authoritative source
-    // to correct it.
-    *remaining_length = length - header_length;
+    packet->options_length = header_length - 20;
+
+    if (packet->options_length > 0) {
+        packet->options = ethernet_packet->data + 20;
+    } else {
+        packet->options = nullptr;
+    }
+
+    packet->data_length = total_length - header_length;
+
+    if (packet->data_length > 0) {
+        packet->data = ethernet_packet->data + header_length;
+    } else {
+        packet->data = nullptr;
+    }
 
     *out_success = true;
 
@@ -153,9 +164,6 @@ static struct TCPPacket* extract_tcp_packet(const struct PCapPacket raw_packet, 
         goto done;
     }
 
-    // We'll use this to protect against incorrect asserted sizes causing overflows etc.
-    size_t remaining_length = ethernet_packet->data_length;
-
     // Only IPV4 is currently supported.
     if (ethernet_packet->ether_type != ETHER_TYPE_IPV4) {
         fprintf(stderr, "Unknown ether type %" PRIu16 "\n", ethernet_packet->ether_type);
@@ -163,7 +171,7 @@ static struct TCPPacket* extract_tcp_packet(const struct PCapPacket raw_packet, 
     }
 
     bool success = false;
-    ipv4_packet = parse_ipv4_packet(ethernet_packet, &remaining_length, &success);
+    ipv4_packet = parse_ipv4_packet(ethernet_packet, &success);
     if (!success) {
         fprintf(stderr, "Parsing IPV4 packet failed\n");
         goto done;
@@ -175,7 +183,7 @@ static struct TCPPacket* extract_tcp_packet(const struct PCapPacket raw_packet, 
         goto done;
     }
 
-    tcp_packet = parse_tcp_packet(ipv4_packet, &remaining_length);
+    tcp_packet = parse_tcp_packet(ipv4_packet);
     if (!tcp_packet) {
         goto done;
     }

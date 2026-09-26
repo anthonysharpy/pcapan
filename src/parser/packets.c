@@ -3,28 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static size_t ipv4packet_get_header_length(const struct IPV4Packet* packet) {
-    unsigned ihl = LOW_NIBBLE(packet->version_and_ihl);
-    size_t header_length = ihl * 4;
-
-     // Avoid corrupt header lengths causing UB.
-    if (header_length < 20) {
-        fprintf(stderr, "IPV4Packet has corrupt header length of %zu, truncating to 20...\n", header_length);
-        return 20;
-    }
-    if (header_length > packet->length) {
-        fprintf(stderr, "IPV4Packet has corrupt header length of %zu, truncating...\n", header_length);
-        return packet->length;
-    }
-
-    return header_length;
-}
-
-// Find the address where the data begins in an IPV4Packet.
-const unsigned char* ipv4packet_get_data_start(const struct IPV4Packet* packet) {
-    return (const unsigned char*)packet + ipv4packet_get_header_length(packet);
-}
-
 static size_t tcppacket_get_header_length(const struct TCPPacket* packet) {
     size_t length = (packet->data_offset_and_flags >> 12) * 4;
 
