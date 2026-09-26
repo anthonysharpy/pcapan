@@ -38,7 +38,7 @@ This is just a coding exercise so there's lots of incorrect assumptions and bugg
 - Corrupt/incomplete data is not always handled as gracefully as it could be, although there are checks to prevent crashes etc.
 - No support for anything other than TCP.
 - Because the byte stream is interpreted as text and output to the console, it sometimes corrupts the console output very slightly.
-- `analyse_bandwidth` will produce garbage output in some extreme scenarios (e.g. all packets have exact same timestamp).
+- `analyse_bandwidth` will produce garbage output in some extreme scenarios (e.g. data contains no packets).
 
 ## Compiling
 
