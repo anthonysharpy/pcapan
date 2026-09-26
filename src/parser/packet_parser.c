@@ -112,7 +112,7 @@ static struct EthernetPacket* parse_ethernet_packet(const struct PCapPacket pcap
         goto done;
     }
 
-    packet = calloc(1, sizeof(*packet));
+    packet = malloc(sizeof(*packet));
     if (!packet) {
         fprintf(stderr, "Failed allocating ethernet packet\n");
         goto done;
@@ -124,6 +124,9 @@ static struct EthernetPacket* parse_ethernet_packet(const struct PCapPacket pcap
     if (pcap_packet.size > 14) {
         packet->data = pcap_packet.data + 14;
         packet->data_length = pcap_packet.size - 14;
+    } else {
+        packet->data = nullptr;
+        packet->data_length = 0;
     }
     packet->ether_type = __builtin_bswap16(packet->ether_type);
 
