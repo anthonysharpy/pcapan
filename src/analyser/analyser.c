@@ -2,6 +2,7 @@
 #include "common/stringify.h"
 #include "common/helpers.h"
 #include "parser/packet_parser.h"
+#include "io/consoleio.h"
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -82,11 +83,14 @@ static void print_tcpconnectionpool_byte_streams(const struct TCPConnectionPool*
             );
         
             if (packet->data_length > 0) {
-                fwrite(packet->data, 1, packet->data_length, stdout);
+                putchar('\n');
+                pretty_print_raw_bytes(packet->data, packet->data_length);
+            } else {
+                printf("EMPTY\n");
             }
         }
 
-        printf("\n=============================\n");
+        printf("=============================\n");
         printf("=============================\n\n");
     }
 }
