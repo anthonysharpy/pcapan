@@ -104,25 +104,28 @@ done:
 }
 
 // Returns nullptr on failure.
-static struct EthernetPacket* parse_ethernet_packet(const struct PCapPacket pcap_packet, size_t* remaining_length) {
+static struct EthernetPacket* parse_ethernet_packet(const struct PCapPacket pcap_packet) {
     struct EthernetPacket* packet = nullptr;
 
-    if (*remaining_length < 14) {
+    if (pcap_packet.size < 14) {
         fprintf(stderr, "Ethernet packet is too small to be valid\n");
         goto done;
     }
 
-    packet = calloc(*remaining_length, 1);
+    packet = calloc(1, sizeof(*packet));
     if (!packet) {
         fprintf(stderr, "Failed allocating ethernet packet\n");
         goto done;
     }
 
-    memcpy(packet, pcap_packet.data, *remaining_length);
+    // Copy metadata.
+    memcpy(packet, pcap_packet.data, 14);
 
+    if (pcap_packet.size > 14) {
+        packet->data = pcap_packet.data + 14;
+        packet->data_length = pcap_packet.size - 14;
+    }
     packet->ether_type = __builtin_bswap16(packet->ether_type);
-
-    *remaining_length -= 14;
 
 done:
     return packet;
@@ -140,15 +143,15 @@ static struct TCPPacket* extract_tcp_packet(const struct PCapPacket raw_packet, 
         goto done;
     }
 
-    // We'll use this to protect against incorrect asserted sizes causing overflows etc.
-    size_t remaining_length = raw_packet.size;
-
-    ethernet_packet = parse_ethernet_packet(raw_packet, &remaining_length);
+    ethernet_packet = parse_ethernet_packet(raw_packet);
     // Only ethernet is currently supported.
     if (!ethernet_packet) {
         fprintf(stderr, "Failed parsing ethernet packet\n");
         goto done;
     }
+
+    // We'll use this to protect against incorrect asserted sizes causing overflows etc.
+    size_t remaining_length = ethernet_packet->data_length;
 
     // Only IPV4 is currently supported.
     if (ethernet_packet->ether_type != ETHER_TYPE_IPV4) {

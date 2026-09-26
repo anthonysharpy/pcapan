@@ -9,9 +9,9 @@ struct PCapPacket {
     // Microseconds or nanoseconds (depending on the .pcap file's resolution) after the value given by
     // unix_timestamp;
     uint32_t precise_timing;
-    // Size in bytes.
+    // Size in bytes of the data.
     uint32_t size;
-    // The original size of the packet before it was truncated, or the same as size if it wasn't
+    // The original size of the data packet before it was truncated, or the same as size if it wasn't
     // truncated.
     uint32_t original_size;
     unsigned char* data;
@@ -34,7 +34,8 @@ struct __attribute__((packed)) EthernetPacket {
     uint8_t destination_mac_address[6];
     uint8_t source_mac_address[6];
     enum EtherType ether_type;
-    unsigned char data[];
+    unsigned char* data;
+    size_t data_length;
 };
 
 // Header length is IHL * 4.
