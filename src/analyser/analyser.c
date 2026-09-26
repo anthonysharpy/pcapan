@@ -90,7 +90,9 @@ static void print_tcpconnectionpool_byte_streams(const struct TCPConnectionPool*
                 );
             }
         
-            fwrite(packet->data, 1, packet->data_length, stdout);
+            if (packet->data_length > 0) {
+                fwrite(packet->data, 1, packet->data_length, stdout);
+            }
         }
 
         printf("\n=============================\n");
@@ -103,7 +105,7 @@ void analyse_bandwidth(const struct PCapData* data) {
 
     size_t total_traffic_bytes = 0;
     for (size_t i = 0; i < data->packet_count; ++i) {
-        total_traffic_bytes += data->packets[i]->size;
+        total_traffic_bytes += data->packets[i]->original_size;
     }
 
     double min_time = DBL_MAX;
@@ -135,7 +137,7 @@ void analyse_tcp_byte_streams(const struct PCapData* data) {
 
     pool = calloc(1, sizeof(*pool));
     if (!pool) {
-        printf("Failed allocating TCP connection pool\n");
+        fprintf(stderr, "Failed allocating TCP connection pool\n");
         goto done;
     }
 
@@ -147,7 +149,7 @@ void analyse_tcp_byte_streams(const struct PCapData* data) {
     size_t tcp_packet_count = 0;
     tcp_packets = parse_tcp_packets(data, &tcp_packet_count);
     if (!tcp_packets) {
-        printf("No TCP packets found\n");
+        fprintf(stderr, "No TCP packets found\n");
         goto done;
     }
 
