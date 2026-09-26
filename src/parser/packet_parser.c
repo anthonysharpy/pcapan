@@ -7,9 +7,11 @@
 #include <string.h>
 #include <stdlib.h>
 
-// Returns nullptr on failure.
-static struct TCPPacket* parse_tcp_packet(const struct IPV4Packet* ipv4_packet) {
+// out_success will be false on failure. Regardless, the caller must free the result.
+// On failure the result is undefined.
+static struct TCPPacket* parse_tcp_packet(const struct IPV4Packet* ipv4_packet, bool* out_success) {
     struct TCPPacket* packet = nullptr;
+    *out_success = false;
 
     if (ipv4_packet->data_length < 20) {
         fprintf(stderr, "TCP packet is too small to be valid\n");
@@ -19,14 +21,18 @@ static struct TCPPacket* parse_tcp_packet(const struct IPV4Packet* ipv4_packet) 
     // We have custom IP fields at the start of the struct that we don't want to copy into.
     constexpr size_t tcppacket_start_offset = offsetof(struct TCPPacket, source_port);
 
-    packet = calloc(1, ipv4_packet->data_length + tcppacket_start_offset);
-    if (!packet) goto done;
+    packet = malloc(sizeof(*packet));
+    if (!packet) {
+        fprintf(stderr, "Failed allocating TCP packet\n");
+        goto done;
+    }
 
-    memcpy((unsigned char*)packet + tcppacket_start_offset, ipv4_packet->data, ipv4_packet->data_length);
+    // Manually assign custom fields.
     packet->source_ip = ipv4_packet->source_ip;
     packet->destination_ip = ipv4_packet->destination_ip;
-    packet->options_and_data_length = ipv4_packet->data_length - 20;
-    
+
+    // Copy metadata.
+    memcpy((unsigned char*)packet + tcppacket_start_offset, ipv4_packet->data, 20);
     packet->source_port = __builtin_bswap16(packet->source_port);
     packet->destination_port = __builtin_bswap16(packet->destination_port);
     packet->sequence_number = __builtin_bswap32(packet->sequence_number);
@@ -35,6 +41,29 @@ static struct TCPPacket* parse_tcp_packet(const struct IPV4Packet* ipv4_packet) 
     packet->checksum = __builtin_bswap16(packet->checksum);
     packet->urgent_pointer = __builtin_bswap16(packet->urgent_pointer);
     packet->window_size = __builtin_bswap16(packet->window_size);
+
+    uint32_t header_length = (packet->data_offset_and_flags >> 12) * 4;
+
+    if (header_length < 20) {
+        fprintf(stderr, "TCPPacket has impossibly small header length\n");
+        goto done;
+    }
+    if (header_length > 60) {
+        fprintf(stderr, "TCPPacket has impossibly large header length greater than 60 bytes\n");
+        goto done;
+    }
+    if (header_length > ipv4_packet->data_length) {
+        fprintf(stderr, "TCPPacket has impossibly large header length\n");
+        goto done;
+    }
+
+    packet->options_length = header_length - 20;
+    packet->options = packet->options_length > 0 ? ipv4_packet->data + 20 : nullptr;
+    
+    packet->data_length = ipv4_packet->data_length - header_length;
+    packet->data = packet->data_length > 0 ? ipv4_packet->data + header_length : nullptr;
+
+    *out_success = true;
 
 done:
     return packet;
@@ -50,7 +79,6 @@ static struct IPV4Packet* parse_ipv4_packet(const struct EthernetPacket* etherne
         fprintf(stderr, "IPV4 packet is too small to be valid\n");
         goto done;
     }
-
 
     uint16_t total_length = 0;
     memcpy(&total_length, &ethernet_packet->data[2], 2);
@@ -183,8 +211,10 @@ static struct TCPPacket* extract_tcp_packet(const struct PCapPacket raw_packet, 
         goto done;
     }
 
-    tcp_packet = parse_tcp_packet(ipv4_packet);
-    if (!tcp_packet) {
+    success = false;
+    tcp_packet = parse_tcp_packet(ipv4_packet, &success);
+    if (!success) {
+        fprintf(stderr, "Failed parsing TCP packet\n");
         goto done;
     }
 

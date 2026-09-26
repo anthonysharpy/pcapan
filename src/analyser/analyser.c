@@ -65,13 +65,11 @@ static void print_tcpconnectionpool_byte_streams(const struct TCPConnectionPool*
         for (size_t p = 0; p < connection->packet_count; ++p) {
             const struct TCPPacket* packet = pool->connections[c].packets[p];
 
-            size_t packet_size = tcppacket_get_data_length(packet);
-
             // Print byte stream.
             if (packet->source_ip == connection->source_ip && packet->source_port == connection->source_port) {
                 printf(
-                    "\nOutgoing (%zu bytes, %s, #%" PRIu32 ", %s:%" PRIu16 "->%s:%" PRIu16 "): ",
-                    packet_size,
+                    "\nOutgoing (%" PRIu32 " bytes, %s, #%" PRIu32 ", %s:%" PRIu16 "->%s:%" PRIu16 "): ",
+                    packet->data_length,
                     tcpflag_to_string(tcppacket_get_flag(packet)),
                     packet->sequence_number,
                     ip_to_string(packet->source_ip, ip_buffer_1),
@@ -81,8 +79,8 @@ static void print_tcpconnectionpool_byte_streams(const struct TCPConnectionPool*
                 );
             } else {
                 printf(
-                    "\nIncoming (%zu bytes, %s, #%" PRIu32 ", %s:%" PRIu16 "->%s:%" PRIu16 "): ",
-                    packet_size,
+                    "\nIncoming (%" PRIu32 " bytes, %s, #%" PRIu32 ", %s:%" PRIu16 "->%s:%" PRIu16 "): ",
+                    packet->data_length,
                     tcpflag_to_string(tcppacket_get_flag(packet)),
                     packet->sequence_number,
                     ip_to_string(packet->source_ip, ip_buffer_1),
@@ -92,7 +90,7 @@ static void print_tcpconnectionpool_byte_streams(const struct TCPConnectionPool*
                 );
             }
         
-            fwrite(tcppacket_get_data_start(packet), 1, packet_size, stdout);
+            fwrite(packet->data, 1, packet->data_length, stdout);
         }
 
         printf("\n=============================\n");

@@ -3,42 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static size_t tcppacket_get_header_length(const struct TCPPacket* packet) {
-    size_t length = (packet->data_offset_and_flags >> 12) * 4;
-
-    // Avoid corrupt header lengths causing UB.
-    if (length < 20) {
-        fprintf(stderr, "TCPPacket has corrupt header length of %zu, truncating to 20...\n", length);
-        return 20;
-    }
-    if (length > 60) {
-        fprintf(stderr, "TCPPacket has corrupt header length of %zu, truncating to 60...\n", length);
-        return 60;
-    }
-    if (length - 20 > packet->options_and_data_length) {
-        fprintf(stderr, "TCPPacket has corrupt header length of %zu, truncating to 20...\n", length);
-        return 20;
-    }
-
-    return length;
-}
-
-// Find the address where the data begins in an TCPPacket.
-const unsigned char* tcppacket_get_data_start(const struct TCPPacket* packet) {
-    size_t header_length = tcppacket_get_header_length(packet);
-
-    return (const unsigned char*)packet + offsetof(struct TCPPacket, source_port) + header_length;
-}
-
 enum TCPFlag tcppacket_get_flag(const struct TCPPacket* packet) {
     return packet->data_offset_and_flags & 0b111111111;
-}
-
-// Find out how much data is in a TCPPacket in bytes.
-size_t tcppacket_get_data_length(const struct TCPPacket* packet) {
-    size_t header_length = tcppacket_get_header_length(packet);
-
-    return packet->options_and_data_length - (header_length - 20);
 }
 
 void pcapdata_destroy(struct PCapData* data) {

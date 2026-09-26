@@ -68,8 +68,6 @@ struct __attribute__((packed)) TCPPacket {
     uint32_t source_ip;
     // Not usually part of a TCP packet but we'll store it here because it's useful.
     uint32_t destination_ip;
-    // Not usually part of a TCP packet but we'll store it here because it's useful.
-    size_t options_and_data_length;
     uint16_t source_port;
     uint16_t destination_port;
     uint32_t sequence_number;
@@ -81,11 +79,14 @@ struct __attribute__((packed)) TCPPacket {
     uint16_t window_size;
     uint16_t checksum;
     uint16_t urgent_pointer;
-    unsigned char options_and_data[];
+    unsigned char* options;
+    unsigned char* data;
+    // The size of `options` in bytes.
+    uint32_t options_length;
+    // The size of `data` in bytes.
+    uint32_t data_length;
 };
 
-const unsigned char* tcppacket_get_data_start(const struct TCPPacket* packet);
-size_t tcppacket_get_data_length(const struct TCPPacket* packet);
 enum TCPFlag tcppacket_get_flag(const struct TCPPacket* packet);
 void pcapdata_destroy(struct PCapData* data);
 double pcappacket_get_timestamp(const struct PCapData* container, const struct PCapPacket* packet);
