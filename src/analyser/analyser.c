@@ -66,29 +66,20 @@ static void print_tcpconnectionpool_byte_streams(const struct TCPConnectionPool*
             const struct TCPPacket* packet = pool->connections[c].packets[p];
 
             // Print byte stream.
-            if (packet->source_ip == connection->source_ip && packet->source_port == connection->source_port) {
-                printf(
-                    "\nOutgoing (%" PRIu32 " bytes, %s, #%" PRIu32 ", %s:%" PRIu16 "->%s:%" PRIu16 "): ",
-                    packet->data_length,
-                    tcpflag_to_string(tcppacket_get_flag(packet)),
-                    packet->sequence_number,
-                    ip_to_string(packet->source_ip, ip_buffer_1),
-                    packet->source_port,
-                    ip_to_string(packet->destination_ip, ip_buffer_2),
-                    packet->destination_port
-                );
-            } else {
-                printf(
-                    "\nIncoming (%" PRIu32 " bytes, %s, #%" PRIu32 ", %s:%" PRIu16 "->%s:%" PRIu16 "): ",
-                    packet->data_length,
-                    tcpflag_to_string(tcppacket_get_flag(packet)),
-                    packet->sequence_number,
-                    ip_to_string(packet->source_ip, ip_buffer_1),
-                    packet->source_port,
-                    ip_to_string(packet->destination_ip, ip_buffer_2),
-                    packet->destination_port
-                );
-            }
+            bool outgoing = packet->source_ip == connection->source_ip
+                && packet->source_port == connection->source_port;
+
+            printf(
+                "\n%s (%" PRIu32 " bytes, %s, #%" PRIu32 ", %s:%" PRIu16 "->%s:%" PRIu16 "): ",
+                outgoing ? "Outgoing" : "Incoming",
+                packet->data_length,
+                tcpflag_to_string(tcppacket_get_flag(packet)),
+                packet->sequence_number,
+                ip_to_string(packet->source_ip, ip_buffer_1),
+                packet->source_port,
+                ip_to_string(packet->destination_ip, ip_buffer_2),
+                packet->destination_port
+            );
         
             if (packet->data_length > 0) {
                 fwrite(packet->data, 1, packet->data_length, stdout);
