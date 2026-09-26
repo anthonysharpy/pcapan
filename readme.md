@@ -25,7 +25,7 @@ Some suggested ideas:
 - The TCP byte stream is output as text. Obviously this comes with its own set of issues, but I figured it was more interesting to look at than a big list of numbers or hex values.
 - I've not added support for decoding the byte stream protocol. It *seems* it's just a length header of 5 characters and then the data after that. It seemed pretty simple in comparison to everything else I've done for this project so I didn't think there'd be much added value in including it.
 - The program is not really designed to be fast and has not been optimised at all.
-- When a packet is parsed (e.g. IPV4 -> TCP), a copy of all of its data is created. Obviously the downside is that this is much slower and takes up a lot of RAM. However from a design perspective one advantage is that it's actually more friendly because otherwise, if the original data gets freed and we try and use a packet that was derived from it, that's a pretty nasty bug. Obviously in the real world you wouldn't take this approach - you would avoid copying as much as possible. But I intentionally wanted to keep it simple for this project, and I also thought it was a good opportunity to show good handling of allocated memory.
+- It was sort-of impossible to create the protocol type histogram because the test data only includes TCP packets. But we do output the number of TCP packets found.
 
 ## Known Bugs
 
