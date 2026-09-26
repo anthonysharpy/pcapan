@@ -173,11 +173,17 @@ done:
     return packet;
 }
 
-// Returns nullptr on failure.
-static struct TCPPacket* extract_tcp_packet(const struct PCapPacket raw_packet, const enum LinkLayerType link_type) {
+// out_success will be false on failure. Regardless, the caller must free the result.
+// The output is undefined on failure.
+static struct TCPPacket* extract_tcp_packet(
+    const struct PCapPacket raw_packet,
+    const enum LinkLayerType link_type,
+    bool* out_success
+) {
     struct IPV4Packet* ipv4_packet = nullptr;
     struct EthernetPacket* ethernet_packet = nullptr;
     struct TCPPacket* tcp_packet = nullptr;
+    *out_success = false;
 
     // Only ethernet is currently supported.
     if (link_type != LINK_LAYER_TYPE_ETHERNET) {
@@ -217,6 +223,8 @@ static struct TCPPacket* extract_tcp_packet(const struct PCapPacket raw_packet, 
         fprintf(stderr, "Failed parsing TCP packet\n");
         goto done;
     }
+
+    *out_success = true;
 
 done:
     free(ipv4_packet);
@@ -275,9 +283,10 @@ void tcpconnection_push_packet(struct TCPConnection* connection, struct TCPPacke
 
 // Parse the network traffic, returning an array of any TCP packets found.
 //
-// Returns nullptr on failure.
+// Returns nullptr on failure or if no packets found.
 struct TCPPacket** parse_tcp_packets(const struct PCapData* traffic_data, size_t* out_count) {
     struct TCPPacket** output = nullptr;
+    bool success = false;
 
     *out_count = 0;
 
@@ -288,9 +297,16 @@ struct TCPPacket** parse_tcp_packets(const struct PCapData* traffic_data, size_t
     }
 
     for (size_t i = 0; i < traffic_data->packet_count; ++i) {
-        struct TCPPacket* packet = extract_tcp_packet(*traffic_data->packets[i], traffic_data->link_layer_type);
+        struct TCPPacket* packet = extract_tcp_packet(
+            *traffic_data->packets[i],
+            traffic_data->link_layer_type,
+            &success
+        );
 
-        if (!packet) continue;
+        if (!success) {
+            free(packet);
+            continue;
+        }
         
         output[*out_count] = packet;
         ++*out_count;
