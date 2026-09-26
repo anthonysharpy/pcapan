@@ -22,9 +22,8 @@ Some suggested ideas:
 - The code was not designed to handle every possible edge case. While it was written with best-practices in mind, it wasn't validated against anything other than the provided example data. It goes without saying that a lot of functionality might be broken or completely missing with another data set.
 - The input file is hard-coded.
 - Due to time constraints I've not included any tests. If that's something of interest then I would definitely recommend my other project at https://github.com/anthonysharpy/nanofill.
-- The TCP byte stream is output as text. Obviously this comes with its own set of issues, but I figured it was more interesting to look at than a big list of numbers or hex values.
-- I've not added support for decoding the byte stream protocol. It *seems* it's just a length header of 5 characters and then the data after that. It seemed pretty simple in comparison to everything else I've done for this project so I didn't think there'd be much added value in including it.
-- The program is not really designed to be fast and has not been optimised at all.
+- I've not added support for decoding the byte stream protocol. It *seems* it's just a length header of 5 characters and then the data after that. It seemed relatively simple in comparison to everything else I've done for this project so I didn't think there'd be loads of added value in including it.
+- The program is not designed to be extremely fast and has not been really been optimised at all.
 - It was sort-of impossible to create the protocol type histogram because the test data only includes TCP packets. But we do output the number of TCP packets found.
 
 ## Known Bugs
@@ -37,7 +36,6 @@ This is just a coding exercise so there's lots of incorrect assumptions and bugg
 - We don't track when connections finish or reset so theoretically different connections can get treated as the same connection if their ports and IPs match.
 - Corrupt/incomplete data is not always handled as gracefully as it could be, although there are checks to prevent crashes etc.
 - No support for anything other than TCP.
-- Because the byte stream is interpreted as text and output to the console, it sometimes corrupts the console output very slightly.
 - `analyse_bandwidth` will produce garbage output in some extreme scenarios (e.g. data contains no packets).
 
 ## Compiling
