@@ -6,11 +6,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int main() {
+int main(int argc, char *argv[]) {
     struct FileData* file = nullptr;
 
+    if (argc != 2) {
+        fprintf(stderr, "Expected 1 argument, got %d\n", argc-1);
+        goto fail;
+    }
+
     bool success = false;
-    file = get_file_bytes("64x8burst_eth2.pcap", &success);
+    file = get_file_bytes(argv[1], &success);
     if (!success) {
         fprintf(stderr, "Failed getting file bytes\n");
         goto fail;
