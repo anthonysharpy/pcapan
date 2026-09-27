@@ -18,9 +18,6 @@ static struct TCPPacket* parse_tcp_packet(const struct IPV4Packet* ipv4_packet, 
         goto done;
     }
 
-    // We have custom IP fields at the start of the struct that we don't want to copy into.
-    constexpr size_t tcppacket_start_offset = offsetof(struct TCPPacket, source_port);
-
     packet = malloc(sizeof(*packet));
     if (!packet) {
         fprintf(stderr, "Failed allocating TCP packet\n");
@@ -32,7 +29,7 @@ static struct TCPPacket* parse_tcp_packet(const struct IPV4Packet* ipv4_packet, 
     packet->destination_ip = ipv4_packet->destination_ip;
 
     // Copy metadata.
-    memcpy((unsigned char*)packet + tcppacket_start_offset, ipv4_packet->data, 20);
+    memcpy(packet, ipv4_packet->data, 20);
     packet->source_port = __builtin_bswap16(packet->source_port);
     packet->destination_port = __builtin_bswap16(packet->destination_port);
     packet->sequence_number = __builtin_bswap32(packet->sequence_number);
