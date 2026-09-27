@@ -5,6 +5,7 @@
 #include <stddef.h>
 
 struct PCapPacket {
+    // ===== STANDARD-DEFINED FIELDS ===== //
     uint32_t unix_timestamp;
     // Microseconds or nanoseconds (depending on the .pcap file's resolution) after the value given by
     // unix_timestamp;
@@ -14,10 +15,12 @@ struct PCapPacket {
     // The original size of the data packet before it was truncated in bytes, or the same as `size` if it wasn't
     // truncated.
     uint32_t original_size;
+    // ===== CUSTOM FIELDS ===== //
     const unsigned char* data;
 };
 
 struct PCapData {
+    // ===== STANDARD-DEFINED FIELDS ===== //
     enum PCapTimingResolution resolution;
     enum Endianness endianness;
     enum LinkLayerType link_layer_type;
@@ -27,13 +30,16 @@ struct PCapData {
     uint32_t packet_count;
     uint16_t major_version;
     uint16_t minor_version;
+    // ===== CUSTOM FIELDS ===== //
     struct PCapPacket** packets;
 };
 
 struct __attribute__((packed)) EthernetPacket {
+    // ===== STANDARD-DEFINED FIELDS ===== //
     uint8_t destination_mac_address[6];
     uint8_t source_mac_address[6];
     enum EtherType ether_type;
+    // ===== CUSTOM FIELDS ===== //
     const unsigned char* data;
     // The size of `data` in bytes.
     uint32_t data_length;
@@ -42,6 +48,7 @@ struct __attribute__((packed)) EthernetPacket {
 // Header length is IHL * 4.
 // The packet will have options if IHL in the header is > 5.
 struct __attribute__((packed)) IPV4Packet {
+    // ===== STANDARD-DEFINED FIELDS ===== //
     // Version is in the high nibble and IHL is in the low nibble.
     uint8_t version_and_ihl;
     uint8_t dscp_or_ecn;
@@ -53,6 +60,7 @@ struct __attribute__((packed)) IPV4Packet {
     uint16_t checksum;
     uint32_t source_ip;
     uint32_t destination_ip;
+    // ===== CUSTOM FIELDS ===== //
     // The size of `options` in bytes.
     uint32_t options_length;
     // The size of `data` in bytes.
@@ -64,6 +72,7 @@ struct __attribute__((packed)) IPV4Packet {
 // The packet will have options if header length > 20.
 // Full header length is high nibble of data_offset * 4.
 struct __attribute__((packed)) TCPPacket {
+    // ===== STANDARD-DEFINED FIELDS ===== //
     uint16_t source_port;
     uint16_t destination_port;
     uint32_t sequence_number;
@@ -75,14 +84,13 @@ struct __attribute__((packed)) TCPPacket {
     uint16_t window_size;
     uint16_t checksum;
     uint16_t urgent_pointer;
+    // ===== CUSTOM FIELDS ===== //
+    uint32_t source_ip;
+    uint32_t destination_ip;
     // The size of `options` in bytes.
     uint32_t options_length;
     // The size of `data` in bytes.
     uint32_t data_length;
-    // Not usually part of a TCP packet but we'll store it here because it's useful.
-    uint32_t source_ip;
-    // Not usually part of a TCP packet but we'll store it here because it's useful.
-    uint32_t destination_ip;
     const unsigned char* options;
     const unsigned char* data;
 };
