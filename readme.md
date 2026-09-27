@@ -29,7 +29,7 @@ Some suggested ideas:
 
 This is just a coding exercise so there's lots of incorrect assumptions and buggy behaviour. Some of the most serious bugs include:
 
-- The packets are processed in the order they come in the file (i.e. usually timestamp order). This just so happens to produce correctly ordered byte-streams on the given test data, but in the real world TCP packet ordering is dictated by the sequence number. To be fair though, my intention was to show the "conversation" between the two devices (regardless of order of processing), and the only way to do that is via timestamps. So I'm not even sure I would call this a bug.
+- The packets are processed in the order they come in the file (i.e. usually timestamp order). This just so happens to produce correctly ordered byte-streams on the given test data, but in the real world TCP packet ordering is dictated by the sequence number. To be fair though, my intention was to show the "conversation" between the two devices (regardless of order of processing), and the only way to do that is via timestamps. So I'm not even sure I would call this a bug. A fully reconstructed byte stream would be sorted using sequence and acknowledgment numbers.
 - For simplicity the maximum number of connections and the number of packets within those connections that the program supports is hard-limited.
 - We don't track when connections finish or reset so theoretically different connections can get treated as the same connection if their ports and IPs match.
 - Corrupt/incomplete data is not always handled as gracefully as it could be, although there are checks to prevent crashes etc.
