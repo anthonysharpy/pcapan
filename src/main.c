@@ -22,9 +22,7 @@ int main(int argc, char *argv[]) {
         goto fail;
     }
 
-    success = false;
-    pcap_data = parse_pcap_file(file, &success);
-    if (!success) {
+    if (!parse_pcap_file(file, &pcap_data)) {
         fprintf(stderr, "Failed parsing pcap file\n");
         goto fail;
     }

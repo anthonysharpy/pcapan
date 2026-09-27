@@ -2,5 +2,6 @@
 
 #include "common/types.h"
 #include "io/fileio.h"
+#include "packets.h"
 
-struct PCapData parse_pcap_file(const struct FileData* file_data, bool* out_success);
+int parse_pcap_file(const struct FileData* file_data, struct PCapData* out_data);
