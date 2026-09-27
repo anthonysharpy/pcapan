@@ -9,7 +9,7 @@
 
 // Parse a FileData that contains the header of a packet capture file.
 //
-// Returns 0 on success.
+// Returns non-zero on success.
 static int parse_pcap_file_header(const struct FileData* file_data, struct PCapData* pcap_data_out) {
     // Endianness and timing accuracy.
     if (file_data->data[0] == 0xd4 && file_data->data[1] == 0xc3 && file_data->data[2] == 0xb2 && file_data->data[3] == 0xa1) {
@@ -26,7 +26,7 @@ static int parse_pcap_file_header(const struct FileData* file_data, struct PCapD
         pcap_data_out->resolution = PCAP_RESOLUTION_NANOSECONDS;
     } else {
         fprintf(stderr, "Unknown magic number %d %d %d %d\n", file_data->data[0], file_data->data[1], file_data->data[2], file_data->data[3]);
-        return -1;
+        return 0;
     }
 
     // Version numbers.
@@ -50,7 +50,7 @@ static int parse_pcap_file_header(const struct FileData* file_data, struct PCapD
         pcap_data_out->link_layer_type = ntohl(pcap_data_out->link_layer_type);
     }
 
-    return 0;
+    return 1;
 }
 
 static size_t filedata_count_pcap_packets(const struct FileData* data, enum Endianness endianness) {
@@ -80,15 +80,15 @@ static size_t filedata_count_pcap_packets(const struct FileData* data, enum Endi
 // Parse a FileData that contains the packets of a packet capture file.
 // The header information in pcap_data_out must have been populated already.
 //
-// Returns 0 on success.
+// Returns non-zero on success.
 static int parse_pcap_file_packets(const struct FileData* file_data, struct PCapData* pcap_data_out) {
-    if (file_data->length <= 24) return 0; // No packets to read.
+    if (file_data->length <= 24) return 1; // No packets to read.
 
     pcap_data_out->packet_count = (uint32_t)filedata_count_pcap_packets(file_data, pcap_data_out->endianness);
 
     // Now create the packets.
     pcap_data_out->packets = calloc(pcap_data_out->packet_count, sizeof(*pcap_data_out->packets));
-    if (!pcap_data_out->packets) return -1;
+    if (!pcap_data_out->packets) return 0;
 
     size_t file_pos = 24;
     size_t nth_packet = 0;
@@ -98,7 +98,7 @@ static int parse_pcap_file_packets(const struct FileData* file_data, struct PCap
 
         if (file_data->length < file_pos+16) {
             fprintf(stderr, "Packet capture data is corrupt in parse_pcap_file_packets\n");
-            return -1;
+            return 0;
         }
 
         memcpy(&packet->unix_timestamp, &file_data->data[file_pos], 4);
@@ -116,11 +116,11 @@ static int parse_pcap_file_packets(const struct FileData* file_data, struct PCap
 
         if (packet->size > pcap_data_out->packet_size_limit) {
             fprintf(stderr, "Packet has corrupt size header in parse_pcap_file_packets\n");
-            return -1;
+            return 0;
         }
         if (file_data->length < file_pos + 16 + packet->size) {
             fprintf(stderr, "Packet capture data is corrupt in parse_pcap_file_packets\n");
-            return -1;
+            return 0;
         }
         
         packet->data = file_data->data + file_pos + 16;
@@ -129,7 +129,7 @@ static int parse_pcap_file_packets(const struct FileData* file_data, struct PCap
         ++nth_packet;
     }
 
-    return 0;
+    return 1;
 }
 
 // Parse a FileData as a packet capture file.
@@ -146,12 +146,12 @@ int parse_pcap_file(const struct FileData* file_data, struct PCapData* out_data)
         return 0;
     }
 
-    if (parse_pcap_file_header(file_data, out_data)) {
+    if (!parse_pcap_file_header(file_data, out_data)) {
         fprintf(stderr, "Failed parsing .pcap file header\n");
         return 0;
     }
 
-    if (parse_pcap_file_packets(file_data, out_data)) {
+    if (!parse_pcap_file_packets(file_data, out_data)) {
         fprintf(stderr, "Failed parsing .pcap file packets\n");
         return 0;
     }
