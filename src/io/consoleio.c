@@ -3,7 +3,7 @@
 
 // Outputs the data as text in a leftside column and the data as hex as a rightside column. 
 void pretty_print_raw_bytes(const unsigned char* const data, const size_t length) {
-    constexpr size_t WIDTH = 30;
+    constexpr static size_t WIDTH = 30;
     size_t from = 0;
     size_t to = length > WIDTH ? WIDTH : length;
 
