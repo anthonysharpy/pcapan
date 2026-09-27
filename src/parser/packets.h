@@ -14,7 +14,7 @@ struct PCapPacket {
     // The original size of the data packet before it was truncated in bytes, or the same as `size` if it wasn't
     // truncated.
     uint32_t original_size;
-    unsigned char* data;
+    const unsigned char* data;
 };
 
 struct PCapData {
@@ -34,7 +34,7 @@ struct __attribute__((packed)) EthernetPacket {
     uint8_t destination_mac_address[6];
     uint8_t source_mac_address[6];
     enum EtherType ether_type;
-    unsigned char* data;
+    const unsigned char* data;
     // The size of `data` in bytes.
     uint32_t data_length;
 };
@@ -53,8 +53,8 @@ struct __attribute__((packed)) IPV4Packet {
     uint16_t checksum;
     uint32_t source_ip;
     uint32_t destination_ip;
-    unsigned char* options;
-    unsigned char* data;
+    const unsigned char* options;
+    const unsigned char* data;
     // The size of `options` in bytes.
     uint32_t options_length;
     // The size of `data` in bytes.
@@ -79,8 +79,8 @@ struct __attribute__((packed)) TCPPacket {
     uint16_t window_size;
     uint16_t checksum;
     uint16_t urgent_pointer;
-    unsigned char* options;
-    unsigned char* data;
+    const unsigned char* options;
+    const unsigned char* data;
     // The size of `options` in bytes.
     uint32_t options_length;
     // The size of `data` in bytes.

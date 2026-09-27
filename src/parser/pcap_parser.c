@@ -96,7 +96,7 @@ static int parse_pcap_file_packets(const struct FileData* file_data, struct PCap
     size_t nth_packet = 0;
 
     while (file_pos < file_data->length) {
-        packet = calloc(1, sizeof(struct PCapPacket));
+        packet = malloc(sizeof(*packet));
         if (!packet) goto fail;
 
         if (file_data->length < file_pos+16) {
@@ -126,10 +126,7 @@ static int parse_pcap_file_packets(const struct FileData* file_data, struct PCap
             goto fail;
         }
         
-        packet->data = malloc(packet->size);
-        if (!packet->data) goto fail;
-
-        memcpy(packet->data, &file_data->data[file_pos+16], packet->size);
+        packet->data = file_data->data + file_pos + 16;
 
         pcap_data_out->packets[nth_packet] = packet;
 
@@ -148,6 +145,9 @@ fail:
 //
 // out_success dictates whether the function failed or not. Regardless, the caller must free
 // the returned data (see pcapdata_destroy).
+//
+// Since we will reference the data using pointers and not re-copy it, the FileData provided to this function
+// must exist for the duration of the lifetime of the returned PCapData.
 struct PCapData parse_pcap_file(const struct FileData* file_data, bool* out_success) {
     struct PCapData pcap_data = {0};
     *out_success = false;

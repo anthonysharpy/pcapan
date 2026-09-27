@@ -2,4 +2,4 @@
 
 #include <stddef.h>
 
-void pretty_print_raw_bytes(unsigned char* data, size_t length);
+void pretty_print_raw_bytes(const unsigned char* const data, const size_t length);
