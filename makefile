@@ -4,6 +4,7 @@ WARN := -Wall -Wextra -Wshadow -Wconversion -Wvla -Wpedantic -Wformat=2 \
         -Wmissing-prototypes -Wcast-qual
 CFLAGS := -std=c2x $(OPT) $(WARN) -DNDEBUG -Isrc
 LDFLAGS := -std=c2x $(OPT)
+PROGRAM_ARGS := $(filter-out run,$(MAKECMDGOALS))
 
 SRCS := $(shell find src -name '*.c')
 OBJS := $(SRCS:src/%.c=build/%.o)
@@ -21,7 +22,7 @@ build/%.o: src/%.c
 	$(GCCVERSION) $(CFLAGS) -MMD -MP -c $< -o $@
 
 run: pcapan
-	./pcapan
+	./pcapan $(PROGRAM_ARGS)
 
 clean:
 	$(RM) -r build pcapan
