@@ -23,15 +23,13 @@ Some suggested ideas:
 - The input file is hard-coded.
 - Due to time constraints I've not included any tests. If that's something of interest then I would definitely recommend my other project at https://github.com/anthonysharpy/nanofill.
 - I've not added support for decoding the byte stream protocol. It *seems* it's just a length header of 5 characters and then the data after that. It seemed relatively simple in comparison to everything else I've done for this project so I didn't think there'd be loads of added value in including it.
-- The program is not designed to be extremely fast and has not been really been optimised at all.
 - It was sort-of impossible to create the protocol type histogram because the test data only includes TCP packets. But we do output the number of TCP packets found.
 
 ## Known Bugs
 
 This is just a coding exercise so there's lots of incorrect assumptions and buggy behaviour. Some of the most serious bugs include:
 
-- The packets are processed in the order they come in the file (i.e. usually timestamp order). This just so happens to produce correctly ordered byte-streams on the given test data, but in the real world TCP packet ordering is dictated by the sequence number. To be fair though, the intention was to show the "conversation" between the two devices, and because both devices in TCP use different sequence numbers, the only way to do that is via timestamps. So I'm not even sure I would call this a bug.
-- The code assumes the system it is running on is always little-endian. This program will not work on big-endian machines. To be fair though, big-endian systems are rare.
+- The packets are processed in the order they come in the file (i.e. usually timestamp order). This just so happens to produce correctly ordered byte-streams on the given test data, but in the real world TCP packet ordering is dictated by the sequence number. To be fair though, my intention was to show the "conversation" between the two devices (regardless of order of processing), and the only way to do that is via timestamps. So I'm not even sure I would call this a bug.
 - For simplicity the maximum number of connections and the number of packets within those connections that the program supports is hard-limited.
 - We don't track when connections finish or reset so theoretically different connections can get treated as the same connection if their ports and IPs match.
 - Corrupt/incomplete data is not always handled as gracefully as it could be, although there are checks to prevent crashes etc.
