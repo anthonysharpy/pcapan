@@ -74,7 +74,7 @@ static void print_tcpconnectionpool_byte_streams(const struct TCPConnectionPool*
                 "\n%s (%" PRIu32 " bytes, %s, #%" PRIu32 ", %s:%" PRIu16 "->%s:%" PRIu16 "): ",
                 outgoing ? "Outgoing" : "Incoming",
                 packet->data_length,
-                tcpflag_to_string(tcppacket_get_flag(packet)),
+                tcpflags_to_string(tcppacket_get_flags(packet)),
                 packet->sequence_number,
                 ip_to_string(packet->source_ip, ip_buffer_1),
                 packet->source_port,

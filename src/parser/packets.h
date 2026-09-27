@@ -95,6 +95,6 @@ struct __attribute__((packed)) TCPPacket {
     uint32_t data_length;
 };
 
-enum TCPFlag tcppacket_get_flag(const struct TCPPacket* packet);
+uint16_t tcppacket_get_flags(const struct TCPPacket* packet);
 void pcapdata_destroy(struct PCapData data);
 double pcappacket_get_timestamp(const struct PCapData container, const struct PCapPacket* packet);

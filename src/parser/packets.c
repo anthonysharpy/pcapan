@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-enum TCPFlag tcppacket_get_flag(const struct TCPPacket* packet) {
+uint16_t tcppacket_get_flags(const struct TCPPacket* packet) {
     return packet->data_offset_and_flags & 0b111111111;
 }
 

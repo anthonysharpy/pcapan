@@ -53,7 +53,7 @@ const char* linklayertype_to_string(const enum LinkLayerType type) {
 }
 
 // This uses a static buffer and so the result should not be re-used. Also not thread-safe.
-const char* tcpflag_to_string(const enum TCPFlag flag) {
+const char* tcpflags_to_string(const uint16_t flags) {
     // Enough space for all flags.
     static char out[35];
     out[0] = '\0';
@@ -71,13 +71,13 @@ const char* tcpflag_to_string(const enum TCPFlag flag) {
     };
 
     for (size_t i = 0; i < sizeof(flag_names) / sizeof(flag_names[0]); ++i) {
-        if (flag & flag_names[i].type) {
+        if (flags & flag_names[i].type) {
             if (out[0]) strcat(out, ",");
             strcat(out, flag_names[i].name);
         }
     }
 
-    if (!out[0]) fprintf(stderr, "Unknown TCP flag %" PRIu16 "\n", flag);
+    if (!out[0]) fprintf(stderr, "Unknown TCP flags %" PRIu16 "\n", flags);
 
     return out;
 }
