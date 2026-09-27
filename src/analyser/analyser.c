@@ -153,7 +153,7 @@ void analyse_traffic_type(const struct PCapData data) {
             case PROTOCOL_UDP:
                 ++udp_count;
                 break;
-            case PROTOCOL_UNKNOWN:
+            default:
                 ++other_count;
                 break;
         }
