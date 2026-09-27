@@ -33,11 +33,11 @@ int main(int argc, char *argv[]) {
     analyse_tcp_byte_streams(pcap_data);
 
     pcapdata_destroy(pcap_data);
-    filedata_destroy(file);
+    free(file);
     return EXIT_SUCCESS;
 
 fail:
     pcapdata_destroy(pcap_data);
-    filedata_destroy(file);
+    free(file);
     return EXIT_FAILURE;
 }

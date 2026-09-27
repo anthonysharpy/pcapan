@@ -34,7 +34,3 @@ done:
     if (file) fclose(file);
     return file_data;
 }
-
-void filedata_destroy(struct FileData* file) {
-    free(file);
-}

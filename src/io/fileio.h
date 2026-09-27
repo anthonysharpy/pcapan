@@ -9,4 +9,3 @@ struct FileData {
 };
 
 struct FileData* get_file_bytes(const char* filename, bool* out_success);
-void filedata_destroy(struct FileData* file);
