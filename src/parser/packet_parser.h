@@ -25,7 +25,7 @@ struct TCPConnectionPool {
 };
 
 
-struct TCPPacket** parse_tcp_packets(const struct PCapData traffic_data, size_t* out_count);
+struct TCPPacket* parse_tcp_packets(const struct PCapData traffic_data, size_t* out_count);
 struct IPV4Packet* parse_ipv4_packets(const struct PCapData traffic_data, size_t* out_count);
 struct TCPConnection* tcpconnectionpool_find_connection(
     struct TCPConnectionPool* pool,

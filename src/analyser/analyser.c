@@ -25,29 +25,29 @@ void analyse_pcap_file(const struct PCapData pcap_data) {
 static void organise_tcp_packets_by_connection(
     const size_t packet_count,
     struct TCPConnectionPool* pool,
-    struct TCPPacket** tcp_packets
+    struct TCPPacket* tcp_packets
 ) {
     struct TCPConnection* connection = nullptr;
 
     for (size_t i = 0; i < packet_count; ++i) {
         connection = tcpconnectionpool_find_connection(
             pool,
-            tcp_packets[i]->source_ip,
-            tcp_packets[i]->destination_ip,
-            tcp_packets[i]->source_port,
-            tcp_packets[i]->destination_port
+            tcp_packets[i].source_ip,
+            tcp_packets[i].destination_ip,
+            tcp_packets[i].source_port,
+            tcp_packets[i].destination_port
         );
 
         if (connection) {
-            tcpconnection_push_packet(connection, tcp_packets[i]);
+            tcpconnection_push_packet(connection, &tcp_packets[i]);
         } else {
             struct TCPConnection new_connection = {
-                .destination_ip = tcp_packets[i]->destination_ip,
-                .source_ip = tcp_packets[i]->source_ip,
-                .destination_port = tcp_packets[i]->destination_port,
-                .source_port = tcp_packets[i]->source_port,
+                .destination_ip = tcp_packets[i].destination_ip,
+                .source_ip = tcp_packets[i].source_ip,
+                .destination_port = tcp_packets[i].destination_port,
+                .source_port = tcp_packets[i].source_port,
             };
-            tcpconnection_push_packet(&new_connection, tcp_packets[i]);
+            tcpconnection_push_packet(&new_connection, &tcp_packets[i]);
             tcpconnectionpool_push_connection(pool, &new_connection);
         }
     }
@@ -188,7 +188,7 @@ done:
 // Analyses the TCP byte streams within the given data, outputting the information to the console.
 void analyse_tcp_byte_streams(const struct PCapData data) {
     struct TCPConnectionPool* pool = nullptr;
-    struct TCPPacket** tcp_packets = nullptr;
+    struct TCPPacket* tcp_packets = nullptr;
 
     pool = calloc(1, sizeof(*pool));
     if (!pool) {
@@ -220,10 +220,5 @@ void analyse_tcp_byte_streams(const struct PCapData data) {
     
 done:
     free(pool);
-    if (tcp_packets) {
-        for (size_t i = 0; i < tcp_packet_count; ++i) {
-            free(tcp_packets[i]);
-        }
-        free(tcp_packets);
-    }
+    free(tcp_packets);
 }

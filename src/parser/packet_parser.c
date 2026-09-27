@@ -8,63 +8,50 @@
 #include <stdlib.h>
 #include <arpa/inet.h>
 
-// out_success will be false on failure. Regardless, the caller must free the result.
-// On failure the result is undefined.
-static struct TCPPacket* parse_tcp_packet(const struct IPV4Packet ipv4_packet, bool* out_success) {
-    struct TCPPacket* packet = nullptr;
-    *out_success = false;
-
+// Result will be non-zero on success.
+static int parse_tcp_packet(const struct IPV4Packet ipv4_packet, struct TCPPacket* out_packet) {
     if (ipv4_packet.data_length < 20) {
         fprintf(stderr, "TCP packet is too small to be valid\n");
-        goto done;
-    }
-
-    packet = malloc(sizeof(*packet));
-    if (!packet) {
-        fprintf(stderr, "Failed allocating TCP packet\n");
-        goto done;
+        return 0;
     }
 
     // Manually assign custom fields.
-    packet->source_ip = ipv4_packet.source_ip;
-    packet->destination_ip = ipv4_packet.destination_ip;
+    out_packet->source_ip = ipv4_packet.source_ip;
+    out_packet->destination_ip = ipv4_packet.destination_ip;
 
     // Copy metadata.
-    memcpy(packet, ipv4_packet.data, 20);
-    packet->source_port = ntohs(packet->source_port);
-    packet->destination_port = ntohs(packet->destination_port);
-    packet->sequence_number = ntohl(packet->sequence_number);
-    packet->acknowledgement_number = ntohl(packet->acknowledgement_number);
-    packet->data_offset_and_flags = ntohs(packet->data_offset_and_flags);
-    packet->checksum = ntohs(packet->checksum);
-    packet->urgent_pointer = ntohs(packet->urgent_pointer);
-    packet->window_size = ntohs(packet->window_size);
+    memcpy(out_packet, ipv4_packet.data, 20);
+    out_packet->source_port = ntohs(out_packet->source_port);
+    out_packet->destination_port = ntohs(out_packet->destination_port);
+    out_packet->sequence_number = ntohl(out_packet->sequence_number);
+    out_packet->acknowledgement_number = ntohl(out_packet->acknowledgement_number);
+    out_packet->data_offset_and_flags = ntohs(out_packet->data_offset_and_flags);
+    out_packet->checksum = ntohs(out_packet->checksum);
+    out_packet->urgent_pointer = ntohs(out_packet->urgent_pointer);
+    out_packet->window_size = ntohs(out_packet->window_size);
 
-    uint32_t header_length = (packet->data_offset_and_flags >> 12) * 4;
+    uint32_t header_length = (out_packet->data_offset_and_flags >> 12) * 4;
 
     if (header_length < 20) {
         fprintf(stderr, "TCPPacket has impossibly small header length\n");
-        goto done;
+        return 0;
     }
     if (header_length > 60) {
         fprintf(stderr, "TCPPacket has impossibly large header length greater than 60 bytes\n");
-        goto done;
+        return 0;
     }
     if (header_length > ipv4_packet.data_length) {
         fprintf(stderr, "TCPPacket has impossibly large header length\n");
-        goto done;
+        return 0;
     }
 
-    packet->options_length = header_length - 20;
-    packet->options = packet->options_length > 0 ? ipv4_packet.data + 20 : nullptr;
+    out_packet->options_length = header_length - 20;
+    out_packet->options = out_packet->options_length > 0 ? ipv4_packet.data + 20 : nullptr;
     
-    packet->data_length = ipv4_packet.data_length - header_length;
-    packet->data = packet->data_length > 0 ? ipv4_packet.data + header_length : nullptr;
+    out_packet->data_length = ipv4_packet.data_length - header_length;
+    out_packet->data = out_packet->data_length > 0 ? ipv4_packet.data + header_length : nullptr;
 
-    *out_success = true;
-
-done:
-    return packet;
+    return 1;
 }
 
 // Returns non-zero on success.
@@ -178,37 +165,28 @@ static int extract_ipv4_packet(
     return 1;
 }
 
-// out_success will be false on failure. Regardless, the caller must free the result.
-// The output is undefined on failure.
-static struct TCPPacket* extract_tcp_packet(
+// Result will be non-zero on success.
+static int extract_tcp_packet(
     const struct PCapPacket raw_packet,
     const enum LinkLayerType link_type,
-    bool* out_success
+    struct TCPPacket* out_packet
 ) {
-    struct TCPPacket* tcp_packet = nullptr;
-    *out_success = false;
-
     struct IPV4Packet ipv4_packet;
     if (!extract_ipv4_packet(raw_packet, link_type, &ipv4_packet)) {
         fprintf(stderr, "Extracting IPV4 packet failed\n");
-        goto done;
+        return 0;
     }
 
     if (ipv4_packet.protocol != PROTOCOL_TCP) {
-        goto done;
+        return 0;
     }
 
-    bool success = false;
-    tcp_packet = parse_tcp_packet(ipv4_packet, &success);
-    if (!success) {
+    if (!parse_tcp_packet(ipv4_packet, out_packet)) {
         fprintf(stderr, "Failed parsing TCP packet\n");
-        goto done;
+        return 0;
     }
 
-    *out_success = true;
-
-done:
-    return tcp_packet;
+    return 1;
 }
 
 struct TCPConnection* tcpconnectionpool_find_connection(
@@ -263,10 +241,8 @@ void tcpconnection_push_packet(struct TCPConnection* connection, struct TCPPacke
 // Parse the network traffic, returning an array of any TCP packets found.
 //
 // Returns nullptr on failure.
-struct TCPPacket** parse_tcp_packets(const struct PCapData traffic_data, size_t* out_count) {
-    struct TCPPacket** output = nullptr;
-    bool success = false;
-
+struct TCPPacket* parse_tcp_packets(const struct PCapData traffic_data, size_t* out_count) {
+    struct TCPPacket* output = nullptr;
     *out_count = 0;
 
     output = malloc(sizeof(*output) * traffic_data.packet_count);
@@ -276,18 +252,10 @@ struct TCPPacket** parse_tcp_packets(const struct PCapData traffic_data, size_t*
     }
 
     for (size_t i = 0; i < traffic_data.packet_count; ++i) {
-        struct TCPPacket* packet = extract_tcp_packet(
-            traffic_data.packets[i],
-            traffic_data.link_layer_type,
-            &success
-        );
-
-        if (!success) {
-            free(packet);
+        if (!extract_tcp_packet(traffic_data.packets[i], traffic_data.link_layer_type, &output[*out_count])) {
             continue;
         }
-        
-        output[*out_count] = packet;
+
         ++*out_count;
     }
 
@@ -300,7 +268,6 @@ done:
 // Returns nullptr on failure.
 struct IPV4Packet* parse_ipv4_packets(const struct PCapData traffic_data, size_t* out_count) {
     struct IPV4Packet* output = nullptr;
-
     *out_count = 0;
 
     output = malloc(sizeof(*output) * traffic_data.packet_count);
