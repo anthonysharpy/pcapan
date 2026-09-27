@@ -51,3 +51,4 @@ This is just a coding exercise so there's lots of incorrect assumptions and bugg
 - We don't track when connections finish or reset so theoretically different connections can get treated as the same connection if their ports and IPs match.
 - Corrupt/incomplete data is not always handled as gracefully as it could be, although there are checks to prevent crashes etc.
 - Support outside of TCP is limited.
+- I think some parts are a little bit broken on big endian machines, but those are really rare, so I haven't really thought to fix them.
