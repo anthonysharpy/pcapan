@@ -69,20 +69,20 @@ done:
 
 // out_success dictates whether the method failed. Regardless, the caller must free the result.
 // On failure, the output is undefined.
-static struct IPV4Packet* parse_ipv4_packet(const struct EthernetPacket* ethernet_packet, bool* out_success) {
+static struct IPV4Packet* parse_ipv4_packet(const struct EthernetPacket ethernet_packet, bool* out_success) {
     struct IPV4Packet* packet = nullptr;
     *out_success = false;
 
-    if (ethernet_packet->data_length < 20) {
+    if (ethernet_packet.data_length < 20) {
         fprintf(stderr, "IPV4 packet is too small to be valid\n");
         goto done;
     }
 
     uint16_t total_length = 0;
-    memcpy(&total_length, &ethernet_packet->data[2], 2);
+    memcpy(&total_length, &ethernet_packet.data[2], 2);
     total_length = ntohs(total_length);
 
-    if (total_length > ethernet_packet->data_length) {
+    if (total_length > ethernet_packet.data_length) {
         fprintf(stderr,  "IPV4 packet's claimed length is impossibly large\n");
         goto done;
     }
@@ -98,7 +98,7 @@ static struct IPV4Packet* parse_ipv4_packet(const struct EthernetPacket* etherne
     }
 
     // Copy metadata.
-    memcpy(packet, ethernet_packet->data, 20);
+    memcpy(packet, ethernet_packet.data, 20);
 
     packet->source_ip = ntohl(packet->source_ip);
     packet->destination_ip = ntohl(packet->destination_ip);
@@ -121,13 +121,13 @@ static struct IPV4Packet* parse_ipv4_packet(const struct EthernetPacket* etherne
     packet->options_length = header_length - 20;
 
     packet->options = packet->options_length > 0 ?
-        ethernet_packet->data + 20
+        ethernet_packet.data + 20
         : nullptr;
 
     packet->data_length = total_length - header_length;
 
     packet->data = packet->data_length > 0 ?
-        ethernet_packet->data + header_length
+        ethernet_packet.data + header_length
         : nullptr;
 
     *out_success = true;
@@ -136,35 +136,26 @@ done:
     return packet;
 }
 
-// Returns nullptr on failure.
-static struct EthernetPacket* parse_ethernet_packet(const struct PCapPacket pcap_packet) {
-    struct EthernetPacket* packet = nullptr;
-
+// Returns non-zero on success.
+static int parse_ethernet_packet(const struct PCapPacket pcap_packet, struct EthernetPacket* out_packet) {
     if (pcap_packet.size < 14) {
         fprintf(stderr, "Ethernet packet is too small to be valid\n");
-        goto done;
-    }
-
-    packet = malloc(sizeof(*packet));
-    if (!packet) {
-        fprintf(stderr, "Failed allocating ethernet packet\n");
-        goto done;
+        return 0;
     }
 
     // Copy metadata.
-    memcpy(packet, pcap_packet.data, 14);
+    memcpy(out_packet, pcap_packet.data, 14);
 
     if (pcap_packet.size > 14) {
-        packet->data = pcap_packet.data + 14;
-        packet->data_length = pcap_packet.size - 14;
+        out_packet->data = pcap_packet.data + 14;
+        out_packet->data_length = pcap_packet.size - 14;
     } else {
-        packet->data = nullptr;
-        packet->data_length = 0;
+        out_packet->data = nullptr;
+        out_packet->data_length = 0;
     }
-    packet->ether_type = ntohs(packet->ether_type);
+    out_packet->ether_type = ntohs(out_packet->ether_type);
 
-done:
-    return packet;
+    return 1;
 }
 
 // out_success will be false on failure. Regardless, the caller must free the result.
@@ -175,7 +166,6 @@ static struct IPV4Packet* extract_ipv4_packet(
     bool* out_success
 ) {
     struct IPV4Packet* ipv4_packet = nullptr;
-    struct EthernetPacket* ethernet_packet = nullptr;
     *out_success = false;
 
     // Only ethernet is currently supported.
@@ -184,16 +174,16 @@ static struct IPV4Packet* extract_ipv4_packet(
         goto done;
     }
 
-    ethernet_packet = parse_ethernet_packet(raw_packet);
+    struct EthernetPacket ethernet_packet;
     // Only ethernet is currently supported.
-    if (!ethernet_packet) {
+    if (!parse_ethernet_packet(raw_packet, &ethernet_packet)) {
         fprintf(stderr, "Failed parsing ethernet packet\n");
         goto done;
     }
 
     // Only IPV4 is currently supported.
-    if (ethernet_packet->ether_type != ETHER_TYPE_IPV4) {
-        fprintf(stderr, "Unknown ether type %" PRIu16 "\n", ethernet_packet->ether_type);
+    if (ethernet_packet.ether_type != ETHER_TYPE_IPV4) {
+        fprintf(stderr, "Unknown ether type %" PRIu16 "\n", ethernet_packet.ether_type);
         goto done;
     }
 
@@ -207,7 +197,6 @@ static struct IPV4Packet* extract_ipv4_packet(
     *out_success = true;
 
 done:
-    free(ethernet_packet);
     return ipv4_packet;
 }
 
