@@ -19,8 +19,9 @@ struct PCapPacket {
     const unsigned char* data;
 };
 
+// Note that while some of the fields here are standard, the struct's layout has been
+// customised quite heavily to our needs, so we'll just treat this as if it were a custom data type. 
 struct PCapData {
-    // ===== STANDARD-DEFINED FIELDS ===== //
     enum PCapTimingResolution resolution;
     enum Endianness endianness;
     enum LinkLayerType link_layer_type;
@@ -30,7 +31,6 @@ struct PCapData {
     uint32_t packet_count;
     uint16_t major_version;
     uint16_t minor_version;
-    // ===== CUSTOM FIELDS ===== //
     struct PCapPacket** packets;
 };
 
@@ -61,12 +61,12 @@ struct __attribute__((packed)) IPV4Packet {
     uint32_t source_ip;
     uint32_t destination_ip;
     // ===== CUSTOM FIELDS ===== //
+    const unsigned char* options;
+    const unsigned char* data;
     // The size of `options` in bytes.
     uint32_t options_length;
     // The size of `data` in bytes.
     uint32_t data_length;
-    const unsigned char* options;
-    const unsigned char* data;
 };
 
 // The packet will have options if header length > 20.
@@ -85,14 +85,14 @@ struct __attribute__((packed)) TCPPacket {
     uint16_t checksum;
     uint16_t urgent_pointer;
     // ===== CUSTOM FIELDS ===== //
+    const unsigned char* options;
+    const unsigned char* data;
     uint32_t source_ip;
     uint32_t destination_ip;
     // The size of `options` in bytes.
     uint32_t options_length;
     // The size of `data` in bytes.
     uint32_t data_length;
-    const unsigned char* options;
-    const unsigned char* data;
 };
 
 enum TCPFlag tcppacket_get_flag(const struct TCPPacket* packet);
