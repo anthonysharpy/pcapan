@@ -248,7 +248,7 @@ struct TCPPacket* parse_tcp_packets(const struct PCapData traffic_data, size_t* 
     output = malloc(sizeof(*output) * traffic_data.packet_count);
     if (!output) {
         fprintf(stderr, "Failed allocating TCP packets\n");
-        goto done;
+        return nullptr;
     }
 
     for (size_t i = 0; i < traffic_data.packet_count; ++i) {
@@ -259,7 +259,6 @@ struct TCPPacket* parse_tcp_packets(const struct PCapData traffic_data, size_t* 
         ++*out_count;
     }
 
-done:
     return output;
 }
 
@@ -273,7 +272,7 @@ struct IPV4Packet* parse_ipv4_packets(const struct PCapData traffic_data, size_t
     output = malloc(sizeof(*output) * traffic_data.packet_count);
     if (!output) {
         fprintf(stderr, "Failed allocating IPV4 packets\n");
-        goto done;
+        return nullptr;
     }
 
     for (size_t i = 0; i < traffic_data.packet_count; ++i) {
@@ -284,6 +283,5 @@ struct IPV4Packet* parse_ipv4_packets(const struct PCapData traffic_data, size_t
         ++*out_count;
     }
 
-done:
     return output;
 }
