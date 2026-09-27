@@ -4,7 +4,8 @@
 #include <stddef.h>
 #include "packets.h"
 
-// Hard-coding these sizes is really stupid but I haven't really got much time to make it better.
+// Hard-coding these sizes is bad but I just want to keep it simple for now.
+// Really we should have dynamically-resized arrays. Or maybe just count how many we need in advance.
 // All code will assume these limits are never reached.
 constexpr size_t TCPCONNECTION_MAX_PACKETS = 64;
 constexpr size_t TCPCONNECTIONPOOL_MAX_CONNECTIONS = 64;
