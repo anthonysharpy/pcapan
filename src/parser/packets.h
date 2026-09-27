@@ -32,7 +32,7 @@ struct PCapData {
     uint32_t packet_count;
     uint16_t major_version;
     uint16_t minor_version;
-    struct PCapPacket** packets;
+    struct PCapPacket* packets;
 };
 
 struct EthernetPacket {

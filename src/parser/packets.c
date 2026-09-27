@@ -8,14 +8,7 @@ uint16_t tcppacket_get_flags(const struct TCPPacket* packet) {
 }
 
 void pcapdata_destroy(struct PCapData data) {
-    if (data.packets) {
-        for (size_t i = 0; i < data.packet_count; ++i) {
-            if (data.packets[i]) {
-                free(data.packets[i]);
-            }
-        }
-        free(data.packets);
-    }
+    free(data.packets);
 }
 
 double pcappacket_get_timestamp(const struct PCapData container, const struct PCapPacket* packet) {

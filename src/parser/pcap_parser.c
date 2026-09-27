@@ -83,22 +83,19 @@ done:
 //
 // Returns 0 on success.
 static int parse_pcap_file_packets(const struct FileData* file_data, struct PCapData* pcap_data_out) {
-    struct PCapPacket* packet = nullptr;
-
     if (file_data->length <= 24) return 0; // No packets to read.
 
     pcap_data_out->packet_count = (uint32_t)filedata_count_pcap_packets(file_data, pcap_data_out->endianness);
 
     // Now create the packets.
-    pcap_data_out->packets = calloc(pcap_data_out->packet_count, sizeof(struct PCapPacket*));
+    pcap_data_out->packets = calloc(pcap_data_out->packet_count, sizeof(*pcap_data_out->packets));
     if (!pcap_data_out->packets) return -1;
 
     size_t file_pos = 24;
     size_t nth_packet = 0;
 
     while (file_pos < file_data->length) {
-        packet = malloc(sizeof(*packet));
-        if (!packet) goto fail;
+        struct PCapPacket* packet = &pcap_data_out->packets[nth_packet];
 
         if (file_data->length < file_pos+16) {
             fprintf(stderr, "Packet capture data is corrupt in parse_pcap_file_packets\n");
@@ -129,8 +126,6 @@ static int parse_pcap_file_packets(const struct FileData* file_data, struct PCap
         
         packet->data = file_data->data + file_pos + 16;
 
-        pcap_data_out->packets[nth_packet] = packet;
-
         file_pos += 16 + packet->size;
         ++nth_packet;
     }
@@ -138,7 +133,6 @@ static int parse_pcap_file_packets(const struct FileData* file_data, struct PCap
     return 0;
 
 fail:
-    free(packet);
     return -1;
 }
 

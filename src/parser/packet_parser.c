@@ -313,7 +313,7 @@ struct TCPPacket** parse_tcp_packets(const struct PCapData traffic_data, size_t*
 
     for (size_t i = 0; i < traffic_data.packet_count; ++i) {
         struct TCPPacket* packet = extract_tcp_packet(
-            *traffic_data.packets[i],
+            traffic_data.packets[i],
             traffic_data.link_layer_type,
             &success
         );
@@ -348,7 +348,7 @@ struct IPV4Packet** parse_ipv4_packets(const struct PCapData traffic_data, size_
 
     for (size_t i = 0; i < traffic_data.packet_count; ++i) {
         struct IPV4Packet* packet = extract_ipv4_packet(
-            *traffic_data.packets[i],
+            traffic_data.packets[i],
             traffic_data.link_layer_type,
             &success
         );

@@ -99,13 +99,13 @@ static void print_tcpconnectionpool_byte_streams(const struct TCPConnectionPool*
 void analyse_bandwidth(const struct PCapData data) {
     size_t total_traffic_bytes = 0;
     for (size_t i = 0; i < data.packet_count; ++i) {
-        total_traffic_bytes += data.packets[i]->original_size;
+        total_traffic_bytes += data.packets[i].original_size;
     }
 
     double min_time = DBL_MAX;
     double max_time = 0;
     for (size_t i = 0; i < data.packet_count; ++i) {
-        double timestamp = pcappacket_get_timestamp(data, data.packets[i]);
+        double timestamp = pcappacket_get_timestamp(data, &data.packets[i]);
         if (timestamp > max_time) max_time = timestamp;
         if (timestamp < min_time) min_time = timestamp;
     }
