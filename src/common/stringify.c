@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
+#include <inttypes.h>
 
 char* ip_to_string(const uint32_t ip, char* out_buffer) {
     snprintf(
@@ -56,70 +57,28 @@ const char* tcpflag_to_string(const enum TCPFlag flag) {
     // Enough space for all flags.
     static char out[35];
     out[0] = '\0';
-    bool comma = false;
 
-    if (flag & TCP_FLAG_FIN) {
-        if (comma) strcat(out, ",FIN");
-        else {
-            strcat(out, "FIN");
-            comma = true;
+    static const struct { enum TCPFlag type; const char *name; } flag_names[] = {
+        {TCP_FLAG_FIN, "FIN"},
+        {TCP_FLAG_SYN, "SYN"},
+        {TCP_FLAG_RST, "RST"},
+        {TCP_FLAG_PSH, "PSH"},
+        {TCP_FLAG_ACK, "ACK"},
+        {TCP_FLAG_URG, "URG"},
+        {TCP_FLAG_ECE, "ECE"},
+        {TCP_FLAG_CWR, "CWR"},
+        {TCP_FLAG_AE,  "AE"}
+    };
+
+    for (size_t i = 0; i < sizeof(flag_names) / sizeof(flag_names[0]); ++i) {
+        if (flag & flag_names[i].type) {
+            if (out[0]) strcat(out, ",");
+            strcat(out, flag_names[i].name);
         }
     }
-    if (flag & TCP_FLAG_SYN) {
-        if (comma) strcat(out, ",SYN");
-        else {
-            strcat(out, "SYN");
-            comma = true;
-        }
-    }
-    if (flag & TCP_FLAG_RST) {
-        if (comma) strcat(out, ",RST");
-        else {
-            strcat(out, "RST");
-            comma = true;
-        }
-    }
-    if (flag & TCP_FLAG_PSH) {
-        if (comma) strcat(out, ",PSH");
-        else {
-            strcat(out, "PSH");
-            comma = true;
-        }
-    }
-    if (flag & TCP_FLAG_ACK) {
-        if (comma) strcat(out, ",ACK");
-        else {
-            strcat(out, "ACK");
-            comma = true;
-        }
-    }
-    if (flag & TCP_FLAG_URG) {
-        if (comma) strcat(out, ",URG");
-        else {
-            strcat(out, "URG");
-            comma = true;
-        }
-    }
-    if (flag & TCP_FLAG_ECE) {
-        if (comma) strcat(out, ",ECE");
-        else {
-            strcat(out, "ECE");
-            comma = true;
-        }
-    }
-    if (flag & TCP_FLAG_CWR) {
-        if (comma) strcat(out, ",CWR");
-        else {
-            strcat(out, "CWR");
-            comma = true;
-        }
-    }
-    if (flag & TCP_FLAG_AE) {
-        if (comma) strcat(out, ",AE");
-        else {
-            strcat(out, "AE");
-            comma = true;
-        }
+
+    if (!out[0]) {
+        fprintf(stderr, "Unknown TCP flag %" PRIu16 "\n", flag);
     }
 
     return out;
