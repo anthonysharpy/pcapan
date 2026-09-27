@@ -51,7 +51,7 @@ struct __attribute__((packed)) IPV4Packet {
     // ===== STANDARD-DEFINED FIELDS ===== //
     // Version is in the high nibble and IHL is in the low nibble.
     uint8_t version_and_ihl;
-    uint8_t dscp_or_ecn;
+    uint8_t dscp_and_ecn;
     uint16_t length;
     uint16_t identification;
     uint16_t flags_and_offset;
