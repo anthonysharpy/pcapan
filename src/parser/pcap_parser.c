@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <arpa/inet.h>
 
 // Parse a FileData that contains the header of a packet capture file.
 //
@@ -43,10 +44,10 @@ static int parse_pcap_file_header(const struct FileData* file_data, struct PCapD
 
     // Swap endianness if necessary.
     if (pcap_data_out->endianness == ENDIANNESS_BIG) {
-        pcap_data_out->major_version = __builtin_bswap16(pcap_data_out->major_version);
-        pcap_data_out->minor_version = __builtin_bswap16(pcap_data_out->minor_version);
-        pcap_data_out->packet_size_limit = __builtin_bswap32(pcap_data_out->packet_size_limit);
-        pcap_data_out->link_layer_type = __builtin_bswap32(pcap_data_out->link_layer_type);
+        pcap_data_out->major_version = ntohs(pcap_data_out->major_version);
+        pcap_data_out->minor_version = ntohs(pcap_data_out->minor_version);
+        pcap_data_out->packet_size_limit = ntohl(pcap_data_out->packet_size_limit);
+        pcap_data_out->link_layer_type = ntohl(pcap_data_out->link_layer_type);
     }
 
     return 0;
@@ -68,7 +69,7 @@ static size_t filedata_count_pcap_packets(const struct FileData* data, enum Endi
         size_t data_length = 0;
         memcpy(&data_length, &data->data[file_pos], 4);
 
-        if (endianness == ENDIANNESS_BIG) data_length = __builtin_bswap32((unsigned int)data_length);
+        if (endianness == ENDIANNESS_BIG) data_length = ntohl((unsigned int)data_length);
 
         file_pos += 16 + data_length;
     }
@@ -111,10 +112,10 @@ static int parse_pcap_file_packets(const struct FileData* file_data, struct PCap
 
         // Swap endianness if necessary.
         if (pcap_data_out->endianness == ENDIANNESS_BIG) {
-            packet->unix_timestamp = __builtin_bswap32(packet->unix_timestamp);
-            packet->precise_timing = __builtin_bswap32(packet->precise_timing);
-            packet->size = __builtin_bswap32(packet->size);
-            packet->original_size = __builtin_bswap32(packet->original_size);
+            packet->unix_timestamp = ntohl(packet->unix_timestamp);
+            packet->precise_timing = ntohl(packet->precise_timing);
+            packet->size = ntohl(packet->size);
+            packet->original_size = ntohl(packet->original_size);
         }
 
         if (packet->size > pcap_data_out->packet_size_limit) {

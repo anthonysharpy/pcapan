@@ -6,6 +6,7 @@
 #include <inttypes.h>
 #include <string.h>
 #include <stdlib.h>
+#include <arpa/inet.h>
 
 // out_success will be false on failure. Regardless, the caller must free the result.
 // On failure the result is undefined.
@@ -30,14 +31,14 @@ static struct TCPPacket* parse_tcp_packet(const struct IPV4Packet* ipv4_packet, 
 
     // Copy metadata.
     memcpy(packet, ipv4_packet->data, 20);
-    packet->source_port = __builtin_bswap16(packet->source_port);
-    packet->destination_port = __builtin_bswap16(packet->destination_port);
-    packet->sequence_number = __builtin_bswap32(packet->sequence_number);
-    packet->acknowledgement_number = __builtin_bswap32(packet->acknowledgement_number);
-    packet->data_offset_and_flags = __builtin_bswap16(packet->data_offset_and_flags);
-    packet->checksum = __builtin_bswap16(packet->checksum);
-    packet->urgent_pointer = __builtin_bswap16(packet->urgent_pointer);
-    packet->window_size = __builtin_bswap16(packet->window_size);
+    packet->source_port = ntohs(packet->source_port);
+    packet->destination_port = ntohs(packet->destination_port);
+    packet->sequence_number = ntohl(packet->sequence_number);
+    packet->acknowledgement_number = ntohl(packet->acknowledgement_number);
+    packet->data_offset_and_flags = ntohs(packet->data_offset_and_flags);
+    packet->checksum = ntohs(packet->checksum);
+    packet->urgent_pointer = ntohs(packet->urgent_pointer);
+    packet->window_size = ntohs(packet->window_size);
 
     uint32_t header_length = (packet->data_offset_and_flags >> 12) * 4;
 
@@ -79,7 +80,7 @@ static struct IPV4Packet* parse_ipv4_packet(const struct EthernetPacket* etherne
 
     uint16_t total_length = 0;
     memcpy(&total_length, &ethernet_packet->data[2], 2);
-    total_length = __builtin_bswap16(total_length);
+    total_length = ntohs(total_length);
 
     if (total_length > ethernet_packet->data_length) {
         fprintf(stderr,  "IPV4 packet's claimed length is impossibly large\n");
@@ -99,12 +100,12 @@ static struct IPV4Packet* parse_ipv4_packet(const struct EthernetPacket* etherne
     // Copy metadata.
     memcpy(packet, ethernet_packet->data, 20);
 
-    packet->source_ip = __builtin_bswap32(packet->source_ip);
-    packet->destination_ip = __builtin_bswap32(packet->destination_ip);
-    packet->length = __builtin_bswap16(packet->length);
-    packet->checksum = __builtin_bswap16(packet->checksum);
-    packet->flags_and_offset = __builtin_bswap16(packet->flags_and_offset);
-    packet->identification = __builtin_bswap16(packet->identification);
+    packet->source_ip = ntohl(packet->source_ip);
+    packet->destination_ip = ntohl(packet->destination_ip);
+    packet->length = ntohs(packet->length);
+    packet->checksum = ntohs(packet->checksum);
+    packet->flags_and_offset = ntohs(packet->flags_and_offset);
+    packet->identification = ntohs(packet->identification);
 
     uint32_t header_length = LOW_NIBBLE(packet->version_and_ihl) * 4;
     
@@ -160,7 +161,7 @@ static struct EthernetPacket* parse_ethernet_packet(const struct PCapPacket pcap
         packet->data = nullptr;
         packet->data_length = 0;
     }
-    packet->ether_type = __builtin_bswap16(packet->ether_type);
+    packet->ether_type = ntohs(packet->ether_type);
 
 done:
     return packet;
