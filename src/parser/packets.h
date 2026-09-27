@@ -73,7 +73,7 @@ struct IPV4Packet {
 _Static_assert(offsetof(struct IPV4Packet, destination_ip) == 16, "IPV4Packet layout is incorrect");
 
 // The packet will have options if header length > 20.
-// Full header length is high nibble of data_offset * 4.
+// Full header length is high nibble of data_offset_and_flags * 4.
 struct TCPPacket {
     // ===== STANDARD-DEFINED FIELDS ===== //
     uint16_t source_port;
