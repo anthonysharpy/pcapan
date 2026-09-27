@@ -88,5 +88,5 @@ struct __attribute__((packed)) TCPPacket {
 };
 
 enum TCPFlag tcppacket_get_flag(const struct TCPPacket* packet);
-void pcapdata_destroy(struct PCapData* data);
-double pcappacket_get_timestamp(const struct PCapData* container, const struct PCapPacket* packet);
+void pcapdata_destroy(struct PCapData data);
+double pcappacket_get_timestamp(const struct PCapData container, const struct PCapPacket* packet);

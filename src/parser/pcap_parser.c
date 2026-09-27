@@ -147,25 +147,22 @@ fail:
 // Parse a FileData as a packet capture file.
 //
 // out_success dictates whether the function failed or not. Regardless, the caller must free
-// the returned data.
-struct PCapData* parse_pcap_file(const struct FileData* file_data, bool* out_success) {
-    struct PCapData* pcap_data = nullptr;
+// the returned data (see pcapdata_destroy).
+struct PCapData parse_pcap_file(const struct FileData* file_data, bool* out_success) {
+    struct PCapData pcap_data = {0};
     *out_success = false;
-
-    pcap_data = calloc(1, sizeof(*pcap_data));
-    if (!pcap_data) goto done;
 
     if (file_data->length < 24) {
         fprintf(stderr, "File is too small to be a .pcap file\n");
         goto done;
     }
 
-    if (parse_pcap_file_header(file_data, pcap_data)) {
+    if (parse_pcap_file_header(file_data, &pcap_data)) {
         fprintf(stderr, "Failed parsing .pcap file header\n");
         goto done;
     }
 
-    if (parse_pcap_file_packets(file_data, pcap_data)) {
+    if (parse_pcap_file_packets(file_data, &pcap_data)) {
         fprintf(stderr, "Failed parsing .pcap file packets\n");
         goto done;
     }

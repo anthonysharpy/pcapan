@@ -8,16 +8,16 @@
 #include <stdlib.h>
 #include <float.h>
 
-void analyse_pcap_file(const struct PCapData* pcap_data) {
+void analyse_pcap_file(const struct PCapData pcap_data) {
     printf("==============================\n");
     printf("====== .pcap file Info ======\n");
     printf("==============================\n");
-    printf("Version: %" PRIu16 ".%" PRIu16 "\n", pcap_data->major_version, pcap_data->minor_version);
-    printf("Resolution: %s\n", timingresolution_to_string(pcap_data->resolution));
-    printf("Endianness: %s\n", endianness_to_string(pcap_data->endianness));
-    printf("Packet size limit: %" PRIu32 "\n", pcap_data->packet_size_limit);
-    printf("Link layer type: %s\n", linklayertype_to_string(pcap_data->link_layer_type));
-    printf("Packet count: %" PRIu32 "\n", pcap_data->packet_count);
+    printf("Version: %" PRIu16 ".%" PRIu16 "\n", pcap_data.major_version, pcap_data.minor_version);
+    printf("Resolution: %s\n", timingresolution_to_string(pcap_data.resolution));
+    printf("Endianness: %s\n", endianness_to_string(pcap_data.endianness));
+    printf("Packet size limit: %" PRIu32 "\n", pcap_data.packet_size_limit);
+    printf("Link layer type: %s\n", linklayertype_to_string(pcap_data.link_layer_type));
+    printf("Packet count: %" PRIu32 "\n", pcap_data.packet_count);
     printf("==============================\n\n");
 }
 
@@ -95,16 +95,16 @@ static void print_tcpconnectionpool_byte_streams(const struct TCPConnectionPool*
     }
 }
 
-void analyse_bandwidth(const struct PCapData* data) {
+void analyse_bandwidth(const struct PCapData data) {
     size_t total_traffic_bytes = 0;
-    for (size_t i = 0; i < data->packet_count; ++i) {
-        total_traffic_bytes += data->packets[i]->original_size;
+    for (size_t i = 0; i < data.packet_count; ++i) {
+        total_traffic_bytes += data.packets[i]->original_size;
     }
 
     double min_time = DBL_MAX;
     double max_time = 0;
-    for (size_t i = 0; i < data->packet_count; ++i) {
-        double timestamp = pcappacket_get_timestamp(data, data->packets[i]);
+    for (size_t i = 0; i < data.packet_count; ++i) {
+        double timestamp = pcappacket_get_timestamp(data, data.packets[i]);
         if (timestamp > max_time) max_time = timestamp;
         if (timestamp < min_time) min_time = timestamp;
     }
@@ -124,7 +124,7 @@ void analyse_bandwidth(const struct PCapData* data) {
 }
 
 // Analyses the TCP byte streams within the given data, outputting the information to the console.
-void analyse_tcp_byte_streams(const struct PCapData* data) {
+void analyse_tcp_byte_streams(const struct PCapData data) {
     struct TCPConnectionPool* pool = nullptr;
     struct TCPPacket** tcp_packets = nullptr;
 
@@ -146,7 +146,7 @@ void analyse_tcp_byte_streams(const struct PCapData* data) {
         goto done;
     }
 
-    printf("Found %zu TCP packets (from %" PRIu32 " packets)\n", tcp_packet_count, data->packet_count);
+    printf("Found %zu TCP packets (from %" PRIu32 " packets)\n", tcp_packet_count, data.packet_count);
 
     printf("Organising packets by connection...\n");
     organise_tcp_packets_by_connection(tcp_packet_count, pool, tcp_packets);

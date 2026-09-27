@@ -280,22 +280,22 @@ void tcpconnection_push_packet(struct TCPConnection* connection, struct TCPPacke
 // Parse the network traffic, returning an array of any TCP packets found.
 //
 // Returns nullptr on failure.
-struct TCPPacket** parse_tcp_packets(const struct PCapData* traffic_data, size_t* out_count) {
+struct TCPPacket** parse_tcp_packets(const struct PCapData traffic_data, size_t* out_count) {
     struct TCPPacket** output = nullptr;
     bool success = false;
 
     *out_count = 0;
 
-    output = malloc(sizeof(*output) * traffic_data->packet_count);
+    output = malloc(sizeof(*output) * traffic_data.packet_count);
     if (!output) {
         fprintf(stderr, "Failed allocating TCP packets\n");
         goto done;
     }
 
-    for (size_t i = 0; i < traffic_data->packet_count; ++i) {
+    for (size_t i = 0; i < traffic_data.packet_count; ++i) {
         struct TCPPacket* packet = extract_tcp_packet(
-            *traffic_data->packets[i],
-            traffic_data->link_layer_type,
+            *traffic_data.packets[i],
+            traffic_data.link_layer_type,
             &success
         );
 
