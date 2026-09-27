@@ -41,12 +41,12 @@ make run mixed_tcp_udp.pcap
 - Due to time constraints I've not included any tests. If that's something of interest then I would definitely recommend my other project at https://github.com/anthonysharpy/nanofill.
 - I've not added support for decoding the byte stream protocol. It *seems* it's just a length header of 5 characters and then the data after that. It seemed relatively simple in comparison to everything else I've done for this project so I didn't think there'd be loads of added value in including it.
 - The bandwidth analysis just looks at the average bandwidth across the whole session. There are other ways of analysing it too - per connection, per burst etc, but I figured I'd keep it simple.
+- The packets are processed in the order they come in the file (i.e. usually timestamp order). This just so happens to produce correctly ordered byte-streams on the given test data, but in the real world TCP packet ordering is dictated by the sequence and acknowledgment numbers. However, my intention was to show the "conversation" between the two devices (not just the raw bytes themselves), and the only way to do that is via timestamps. So personally I would argue this is actually the more informative way of viewing the data as a human.
 
 ## Known Bugs
 
 This is just a coding exercise so there's lots of incorrect assumptions and buggy behaviour. Some of these include:
 
-- The packets are processed in the order they come in the file (i.e. usually timestamp order). This just so happens to produce correctly ordered byte-streams on the given test data, but in the real world TCP packet ordering is dictated by the sequence number. To be fair though, my intention was to show the "conversation" between the two devices (regardless of order of processing), and the only way to do that is via timestamps. So I'm not even sure I would call this a bug. A fully reconstructed byte stream would be sorted using sequence and acknowledgment numbers.
 - For simplicity the maximum number of connections and the number of packets within those connections that the program supports is hard-limited.
 - We don't track when connections finish or reset so theoretically different connections can get treated as the same connection if their ports and IPs match.
 - Corrupt/incomplete data is not always handled as gracefully as it could be, although there are checks to prevent crashes etc.

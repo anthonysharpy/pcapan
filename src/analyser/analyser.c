@@ -53,7 +53,7 @@ static void organise_tcp_packets_by_connection(
     }
 }
 
-static void print_tcpconnectionpool_byte_streams(const struct TCPConnectionPool* pool) {
+static void print_tcpconnectionpool_streams(const struct TCPConnectionPool* pool) {
     char ip_buffer_1[16];
     char ip_buffer_2[16];
 
@@ -67,7 +67,7 @@ static void print_tcpconnectionpool_byte_streams(const struct TCPConnectionPool*
         for (size_t p = 0; p < connection->packet_count; ++p) {
             const struct TCPPacket* packet = pool->connections[c].packets[p];
 
-            // Print byte stream.
+            // Print bytes.
             bool outgoing = packet->source_ip == connection->source_ip
                 && packet->source_port == connection->source_port;
 
@@ -185,8 +185,8 @@ done:
     free(ipv4_packets);
 }
 
-// Analyses the TCP byte streams within the given data, outputting the information to the console.
-void analyse_tcp_byte_streams(const struct PCapData data) {
+// Analyses the TCP streams within the given data, outputting the information to the console.
+void analyse_tcp_streams(const struct PCapData data) {
     struct TCPConnectionPool* pool = nullptr;
     struct TCPPacket* tcp_packets = nullptr;
 
@@ -197,7 +197,7 @@ void analyse_tcp_byte_streams(const struct PCapData data) {
     }
 
     printf("==============================\n");
-    printf("====== TCP Byte Streams ======\n");
+    printf("========= TCP Streams =========\n");
     printf("==============================\n");
     printf("Finding TCP packets...\n");
 
@@ -216,7 +216,7 @@ void analyse_tcp_byte_streams(const struct PCapData data) {
     printf("Found %zu connections\n", pool->connection_count);
 
     printf("Printing packet streams...\n");
-    print_tcpconnectionpool_byte_streams(pool);
+    print_tcpconnectionpool_streams(pool);
     
 done:
     free(pool);
