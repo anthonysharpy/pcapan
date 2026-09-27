@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <float.h>
+#include <math.h>
 
 void analyse_pcap_file(const struct PCapData pcap_data) {
     printf("==============================\n");
@@ -123,6 +124,72 @@ void analyse_bandwidth(const struct PCapData data) {
     printf("Duration: %.2fs\n", duration_seconds);
     printf("Average bandwidth (whole session): %.2fkB/s\n", average_bandwidth);
     printf("==============================\n\n");
+}
+
+
+void analyse_traffic_type(const struct PCapData data) {
+    struct IPV4Packet** ipv4_packets = nullptr;
+
+    printf("==============================\n");
+    printf("==== Traffic Type Analysis ====\n");
+    printf("==============================\n");
+
+    size_t ipv4_packet_count = 0;
+    ipv4_packets = parse_ipv4_packets(data, &ipv4_packet_count);
+    if (!ipv4_packets) {
+        fprintf(stderr, "Failed parsing IPV4 packets\n");
+        goto done;
+    }
+
+    size_t tcp_count = 0;
+    size_t udp_count = 0;
+    size_t other_count = 0;
+
+    for (size_t n = 0; n < ipv4_packet_count; ++n) {
+        struct IPV4Packet* packet = ipv4_packets[n];
+
+        switch (packet->protocol) {
+            case PROTOCOL_TCP:
+                ++tcp_count;
+                break;
+            case PROTOCOL_UDP:
+                ++udp_count;
+                break;
+            case PROTOCOL_UNKNOWN:
+                ++other_count;
+                break;
+        }
+    }
+
+    float tcp_ratio = ipv4_packet_count != 0 ?
+        (float)tcp_count / (float)ipv4_packet_count
+        : 0;
+    float udp_ratio = ipv4_packet_count != 0 ?
+        (float)udp_count / (float)ipv4_packet_count
+        : 0;
+    float other_ratio = ipv4_packet_count != 0 ?
+        (float)other_count / (float)ipv4_packet_count
+        : 0;
+
+    printf("TCP   ");
+    for(int i = 0; i < ceilf(tcp_ratio * 40); ++i) putchar('|');
+    printf(" %zu\n", tcp_count);
+
+    printf("UDP   ");
+    for(int i = 0; i < ceilf(udp_ratio * 40); ++i) putchar('|');
+    printf(" %zu\n", udp_count);
+
+    printf("Other ");
+    for(int i = 0; i < ceilf(other_ratio * 40); ++i) putchar('|');
+    printf(" %zu\n\n", other_count);
+
+done:
+    if (ipv4_packets) {
+        for (size_t i = 0; i < ipv4_packet_count; ++i) {
+            free(ipv4_packets[i]);
+        }
+        free(ipv4_packets);
+    }
 }
 
 // Analyses the TCP byte streams within the given data, outputting the information to the console.

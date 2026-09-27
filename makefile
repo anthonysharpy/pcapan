@@ -15,11 +15,11 @@ DEPS := $(OBJS:.o=.d)
 all: pcapan
 
 pcapan: $(OBJS)
-	$(GCCVERSION) $(LDFLAGS) $^ -o $@ $(LDLIBS)
+	$(GCCVERSION) $(LDFLAGS) $^ -o $@ $(LDLIBS) -lm
 
 build/%.o: src/%.c
 	@mkdir -p $(dir $@)
-	$(GCCVERSION) $(CFLAGS) -MMD -MP -c $< -o $@
+	$(GCCVERSION) $(CFLAGS) -MMD -MP -c $< -o $@ -lm
 
 run: pcapan
 	./pcapan $(PROGRAM_ARGS)

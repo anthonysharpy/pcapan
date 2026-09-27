@@ -25,7 +25,8 @@ enum EtherType : uint16_t {
 
 enum Protocol : uint8_t {
     PROTOCOL_UNKNOWN = 0,
-    PROTOCOL_TCP = 6
+    PROTOCOL_TCP = 6,
+    PROTOCOL_UDP = 17
 };
 
 enum TCPFlag : uint16_t {

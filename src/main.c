@@ -30,6 +30,7 @@ int main(int argc, char *argv[]) {
 
     analyse_pcap_file(pcap_data);
     analyse_bandwidth(pcap_data);
+    analyse_traffic_type(pcap_data);
     analyse_tcp_byte_streams(pcap_data);
 
     pcapdata_destroy(pcap_data);

@@ -169,14 +169,13 @@ done:
 
 // out_success will be false on failure. Regardless, the caller must free the result.
 // The output is undefined on failure.
-static struct TCPPacket* extract_tcp_packet(
+static struct IPV4Packet* extract_ipv4_packet(
     const struct PCapPacket raw_packet,
     const enum LinkLayerType link_type,
     bool* out_success
 ) {
     struct IPV4Packet* ipv4_packet = nullptr;
     struct EthernetPacket* ethernet_packet = nullptr;
-    struct TCPPacket* tcp_packet = nullptr;
     *out_success = false;
 
     // Only ethernet is currently supported.
@@ -205,9 +204,32 @@ static struct TCPPacket* extract_tcp_packet(
         goto done;
     }
 
-    // Only TCP is currently supported.
+    *out_success = true;
+
+done:
+    free(ethernet_packet);
+    return ipv4_packet;
+}
+
+// out_success will be false on failure. Regardless, the caller must free the result.
+// The output is undefined on failure.
+static struct TCPPacket* extract_tcp_packet(
+    const struct PCapPacket raw_packet,
+    const enum LinkLayerType link_type,
+    bool* out_success
+) {
+    struct IPV4Packet* ipv4_packet = nullptr;
+    struct TCPPacket* tcp_packet = nullptr;
+    *out_success = false;
+
+    bool success = false;
+    ipv4_packet = extract_ipv4_packet(raw_packet, link_type, &success);
+    if (!success) {
+        fprintf(stderr, "Extracting IPV4 packet failed\n");
+        goto done;
+    }
+
     if (ipv4_packet->protocol != PROTOCOL_TCP) {
-        fprintf(stderr, "Unknown protocol %" PRIu8 "\n", ipv4_packet->protocol);
         goto done;
     }
 
@@ -222,7 +244,6 @@ static struct TCPPacket* extract_tcp_packet(
 
 done:
     free(ipv4_packet);
-    free(ethernet_packet);
     return tcp_packet;
 }
 
@@ -292,6 +313,41 @@ struct TCPPacket** parse_tcp_packets(const struct PCapData traffic_data, size_t*
 
     for (size_t i = 0; i < traffic_data.packet_count; ++i) {
         struct TCPPacket* packet = extract_tcp_packet(
+            *traffic_data.packets[i],
+            traffic_data.link_layer_type,
+            &success
+        );
+
+        if (!success) {
+            free(packet);
+            continue;
+        }
+        
+        output[*out_count] = packet;
+        ++*out_count;
+    }
+
+done:
+    return output;
+}
+
+// Parse the network traffic, returning an array of any IPV4 packets found.
+//
+// Returns nullptr on failure.
+struct IPV4Packet** parse_ipv4_packets(const struct PCapData traffic_data, size_t* out_count) {
+    struct IPV4Packet** output = nullptr;
+    bool success = false;
+
+    *out_count = 0;
+
+    output = malloc(sizeof(*output) * traffic_data.packet_count);
+    if (!output) {
+        fprintf(stderr, "Failed allocating IPV4 packets\n");
+        goto done;
+    }
+
+    for (size_t i = 0; i < traffic_data.packet_count; ++i) {
+        struct IPV4Packet* packet = extract_ipv4_packet(
             *traffic_data.packets[i],
             traffic_data.link_layer_type,
             &success
