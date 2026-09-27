@@ -128,7 +128,7 @@ void analyse_bandwidth(const struct PCapData data) {
 
 
 void analyse_traffic_type(const struct PCapData data) {
-    struct IPV4Packet** ipv4_packets = nullptr;
+    struct IPV4Packet* ipv4_packets = nullptr;
 
     printf("==============================\n");
     printf("==== Traffic Type Analysis ====\n");
@@ -146,9 +146,7 @@ void analyse_traffic_type(const struct PCapData data) {
     size_t other_count = 0;
 
     for (size_t n = 0; n < ipv4_packet_count; ++n) {
-        struct IPV4Packet* packet = ipv4_packets[n];
-
-        switch (packet->protocol) {
+        switch (ipv4_packets[n].protocol) {
             case PROTOCOL_TCP:
                 ++tcp_count;
                 break;
@@ -184,12 +182,7 @@ void analyse_traffic_type(const struct PCapData data) {
     printf(" %zu\n\n", other_count);
 
 done:
-    if (ipv4_packets) {
-        for (size_t i = 0; i < ipv4_packet_count; ++i) {
-            free(ipv4_packets[i]);
-        }
-        free(ipv4_packets);
-    }
+    free(ipv4_packets);
 }
 
 // Analyses the TCP byte streams within the given data, outputting the information to the console.

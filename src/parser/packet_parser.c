@@ -10,11 +10,11 @@
 
 // out_success will be false on failure. Regardless, the caller must free the result.
 // On failure the result is undefined.
-static struct TCPPacket* parse_tcp_packet(const struct IPV4Packet* ipv4_packet, bool* out_success) {
+static struct TCPPacket* parse_tcp_packet(const struct IPV4Packet ipv4_packet, bool* out_success) {
     struct TCPPacket* packet = nullptr;
     *out_success = false;
 
-    if (ipv4_packet->data_length < 20) {
+    if (ipv4_packet.data_length < 20) {
         fprintf(stderr, "TCP packet is too small to be valid\n");
         goto done;
     }
@@ -26,11 +26,11 @@ static struct TCPPacket* parse_tcp_packet(const struct IPV4Packet* ipv4_packet, 
     }
 
     // Manually assign custom fields.
-    packet->source_ip = ipv4_packet->source_ip;
-    packet->destination_ip = ipv4_packet->destination_ip;
+    packet->source_ip = ipv4_packet.source_ip;
+    packet->destination_ip = ipv4_packet.destination_ip;
 
     // Copy metadata.
-    memcpy(packet, ipv4_packet->data, 20);
+    memcpy(packet, ipv4_packet.data, 20);
     packet->source_port = ntohs(packet->source_port);
     packet->destination_port = ntohs(packet->destination_port);
     packet->sequence_number = ntohl(packet->sequence_number);
@@ -50,16 +50,16 @@ static struct TCPPacket* parse_tcp_packet(const struct IPV4Packet* ipv4_packet, 
         fprintf(stderr, "TCPPacket has impossibly large header length greater than 60 bytes\n");
         goto done;
     }
-    if (header_length > ipv4_packet->data_length) {
+    if (header_length > ipv4_packet.data_length) {
         fprintf(stderr, "TCPPacket has impossibly large header length\n");
         goto done;
     }
 
     packet->options_length = header_length - 20;
-    packet->options = packet->options_length > 0 ? ipv4_packet->data + 20 : nullptr;
+    packet->options = packet->options_length > 0 ? ipv4_packet.data + 20 : nullptr;
     
-    packet->data_length = ipv4_packet->data_length - header_length;
-    packet->data = packet->data_length > 0 ? ipv4_packet->data + header_length : nullptr;
+    packet->data_length = ipv4_packet.data_length - header_length;
+    packet->data = packet->data_length > 0 ? ipv4_packet.data + header_length : nullptr;
 
     *out_success = true;
 
@@ -67,15 +67,11 @@ done:
     return packet;
 }
 
-// out_success dictates whether the method failed. Regardless, the caller must free the result.
-// On failure, the output is undefined.
-static struct IPV4Packet* parse_ipv4_packet(const struct EthernetPacket ethernet_packet, bool* out_success) {
-    struct IPV4Packet* packet = nullptr;
-    *out_success = false;
-
+// Returns non-zero on success.
+static int parse_ipv4_packet(const struct EthernetPacket ethernet_packet, struct IPV4Packet* out_packet) {
     if (ethernet_packet.data_length < 20) {
         fprintf(stderr, "IPV4 packet is too small to be valid\n");
-        goto done;
+        return 0;
     }
 
     uint16_t total_length = 0;
@@ -84,56 +80,47 @@ static struct IPV4Packet* parse_ipv4_packet(const struct EthernetPacket ethernet
 
     if (total_length > ethernet_packet.data_length) {
         fprintf(stderr,  "IPV4 packet's claimed length is impossibly large\n");
-        goto done;
+        return 0;
     }
     if (total_length < 20) {
         fprintf(stderr, "IPV4 packet's claimed length is too small to be valid\n");
-        goto done;
-    }
-
-    packet = malloc(sizeof(*packet));
-    if (!packet)  {
-        fprintf(stderr, "Failed allocating IPV4 packet\n");
-        goto done;
+        return 0;
     }
 
     // Copy metadata.
-    memcpy(packet, ethernet_packet.data, 20);
+    memcpy(out_packet, ethernet_packet.data, 20);
 
-    packet->source_ip = ntohl(packet->source_ip);
-    packet->destination_ip = ntohl(packet->destination_ip);
-    packet->length = ntohs(packet->length);
-    packet->checksum = ntohs(packet->checksum);
-    packet->flags_and_offset = ntohs(packet->flags_and_offset);
-    packet->identification = ntohs(packet->identification);
+    out_packet->source_ip = ntohl(out_packet->source_ip);
+    out_packet->destination_ip = ntohl(out_packet->destination_ip);
+    out_packet->length = ntohs(out_packet->length);
+    out_packet->checksum = ntohs(out_packet->checksum);
+    out_packet->flags_and_offset = ntohs(out_packet->flags_and_offset);
+    out_packet->identification = ntohs(out_packet->identification);
 
-    uint32_t header_length = LOW_NIBBLE(packet->version_and_ihl) * 4;
+    uint32_t header_length = LOW_NIBBLE(out_packet->version_and_ihl) * 4;
     
     if (header_length < 20) {
         fprintf(stderr, "IPV4 packet has impossibly small header length\n");
-        goto done;
+        return 0;
     }
     if (header_length > total_length) {
         fprintf(stderr, "IPV4 header length exceeds total length\n");
-        goto done;
+        return 0;
     }
 
-    packet->options_length = header_length - 20;
+    out_packet->options_length = header_length - 20;
 
-    packet->options = packet->options_length > 0 ?
+    out_packet->options = out_packet->options_length > 0 ?
         ethernet_packet.data + 20
         : nullptr;
 
-    packet->data_length = total_length - header_length;
+    out_packet->data_length = total_length - header_length;
 
-    packet->data = packet->data_length > 0 ?
+    out_packet->data = out_packet->data_length > 0 ?
         ethernet_packet.data + header_length
         : nullptr;
 
-    *out_success = true;
-
-done:
-    return packet;
+    return 1;
 }
 
 // Returns non-zero on success.
@@ -158,46 +145,37 @@ static int parse_ethernet_packet(const struct PCapPacket pcap_packet, struct Eth
     return 1;
 }
 
-// out_success will be false on failure. Regardless, the caller must free the result.
-// The output is undefined on failure.
-static struct IPV4Packet* extract_ipv4_packet(
+// Result is non-zero on success.
+static int extract_ipv4_packet(
     const struct PCapPacket raw_packet,
     const enum LinkLayerType link_type,
-    bool* out_success
+    struct IPV4Packet* out_packet
 ) {
-    struct IPV4Packet* ipv4_packet = nullptr;
-    *out_success = false;
-
     // Only ethernet is currently supported.
     if (link_type != LINK_LAYER_TYPE_ETHERNET) {
         fprintf(stderr, "Unknown link type %u\n", link_type);
-        goto done;
+        return 0;
     }
 
     struct EthernetPacket ethernet_packet;
     // Only ethernet is currently supported.
     if (!parse_ethernet_packet(raw_packet, &ethernet_packet)) {
         fprintf(stderr, "Failed parsing ethernet packet\n");
-        goto done;
+        return 0;
     }
 
     // Only IPV4 is currently supported.
     if (ethernet_packet.ether_type != ETHER_TYPE_IPV4) {
         fprintf(stderr, "Unknown ether type %" PRIu16 "\n", ethernet_packet.ether_type);
-        goto done;
+        return 0;
     }
 
-    bool success = false;
-    ipv4_packet = parse_ipv4_packet(ethernet_packet, &success);
-    if (!success) {
+    if (!parse_ipv4_packet(ethernet_packet, out_packet)) {
         fprintf(stderr, "Parsing IPV4 packet failed\n");
-        goto done;
+        return 0;
     }
 
-    *out_success = true;
-
-done:
-    return ipv4_packet;
+    return 1;
 }
 
 // out_success will be false on failure. Regardless, the caller must free the result.
@@ -207,22 +185,20 @@ static struct TCPPacket* extract_tcp_packet(
     const enum LinkLayerType link_type,
     bool* out_success
 ) {
-    struct IPV4Packet* ipv4_packet = nullptr;
     struct TCPPacket* tcp_packet = nullptr;
     *out_success = false;
 
-    bool success = false;
-    ipv4_packet = extract_ipv4_packet(raw_packet, link_type, &success);
-    if (!success) {
+    struct IPV4Packet ipv4_packet;
+    if (!extract_ipv4_packet(raw_packet, link_type, &ipv4_packet)) {
         fprintf(stderr, "Extracting IPV4 packet failed\n");
         goto done;
     }
 
-    if (ipv4_packet->protocol != PROTOCOL_TCP) {
+    if (ipv4_packet.protocol != PROTOCOL_TCP) {
         goto done;
     }
 
-    success = false;
+    bool success = false;
     tcp_packet = parse_tcp_packet(ipv4_packet, &success);
     if (!success) {
         fprintf(stderr, "Failed parsing TCP packet\n");
@@ -232,7 +208,6 @@ static struct TCPPacket* extract_tcp_packet(
     *out_success = true;
 
 done:
-    free(ipv4_packet);
     return tcp_packet;
 }
 
@@ -323,9 +298,8 @@ done:
 // Parse the network traffic, returning an array of any IPV4 packets found.
 //
 // Returns nullptr on failure.
-struct IPV4Packet** parse_ipv4_packets(const struct PCapData traffic_data, size_t* out_count) {
-    struct IPV4Packet** output = nullptr;
-    bool success = false;
+struct IPV4Packet* parse_ipv4_packets(const struct PCapData traffic_data, size_t* out_count) {
+    struct IPV4Packet* output = nullptr;
 
     *out_count = 0;
 
@@ -336,18 +310,10 @@ struct IPV4Packet** parse_ipv4_packets(const struct PCapData traffic_data, size_
     }
 
     for (size_t i = 0; i < traffic_data.packet_count; ++i) {
-        struct IPV4Packet* packet = extract_ipv4_packet(
-            traffic_data.packets[i],
-            traffic_data.link_layer_type,
-            &success
-        );
-
-        if (!success) {
-            free(packet);
+        if(!extract_ipv4_packet(traffic_data.packets[i], traffic_data.link_layer_type, &output[*out_count])) {
             continue;
         }
         
-        output[*out_count] = packet;
         ++*out_count;
     }
 
