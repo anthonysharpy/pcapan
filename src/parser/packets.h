@@ -18,6 +18,7 @@ struct PCapPacket {
     // ===== CUSTOM FIELDS ===== //
     const unsigned char* data;
 };
+_Static_assert(offsetof(struct PCapPacket, original_size) == 12, "PCapPacket layout is incorrect");
 
 // Note that while some of the fields here are standard, the struct's layout has been
 // customised quite heavily to our needs, so we'll just treat this as if it were a custom data type. 
@@ -34,7 +35,7 @@ struct PCapData {
     struct PCapPacket** packets;
 };
 
-struct __attribute__((packed)) EthernetPacket {
+struct EthernetPacket {
     // ===== STANDARD-DEFINED FIELDS ===== //
     uint8_t destination_mac_address[6];
     uint8_t source_mac_address[6];
@@ -44,10 +45,11 @@ struct __attribute__((packed)) EthernetPacket {
     // The size of `data` in bytes.
     uint32_t data_length;
 };
+_Static_assert(offsetof(struct EthernetPacket, ether_type) == 12, "EthernetPacket layout is incorrect");
 
 // Header length is IHL * 4.
 // The packet will have options if IHL in the header is > 5.
-struct __attribute__((packed)) IPV4Packet {
+struct IPV4Packet {
     // ===== STANDARD-DEFINED FIELDS ===== //
     // Version is in the high nibble and IHL is in the low nibble.
     uint8_t version_and_ihl;
@@ -68,18 +70,19 @@ struct __attribute__((packed)) IPV4Packet {
     // The size of `data` in bytes.
     uint32_t data_length;
 };
+_Static_assert(offsetof(struct IPV4Packet, destination_ip) == 16, "IPV4Packet layout is incorrect");
 
 // The packet will have options if header length > 20.
 // Full header length is high nibble of data_offset * 4.
-struct __attribute__((packed)) TCPPacket {
+struct TCPPacket {
     // ===== STANDARD-DEFINED FIELDS ===== //
     uint16_t source_port;
     uint16_t destination_port;
     uint32_t sequence_number;
     uint32_t acknowledgement_number;
-    // Bits 0-3: data offset
-    // Bits 4-6: reserved
-    // Bits 7-15: flags
+    // Bits 0-8: flags
+    // Bits 9-11: reserved
+    // Bits 12-15: data offset
     uint16_t data_offset_and_flags;
     uint16_t window_size;
     uint16_t checksum;
@@ -94,6 +97,7 @@ struct __attribute__((packed)) TCPPacket {
     // The size of `data` in bytes.
     uint32_t data_length;
 };
+_Static_assert(offsetof(struct TCPPacket, urgent_pointer) == 18, "TCPPacket layout is incorrect");
 
 uint16_t tcppacket_get_flags(const struct TCPPacket* packet);
 void pcapdata_destroy(struct PCapData data);
