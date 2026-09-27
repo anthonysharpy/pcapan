@@ -66,10 +66,10 @@ static size_t filedata_count_pcap_packets(const struct FileData* data, enum Endi
             goto done;
         }
 
-        size_t data_length = 0;
+        uint32_t data_length = 0;
         memcpy(&data_length, &data->data[file_pos], 4);
 
-        if (endianness == ENDIANNESS_BIG) data_length = ntohl((unsigned int)data_length);
+        if (endianness == ENDIANNESS_BIG) data_length = ntohl(data_length);
 
         file_pos += 16 + data_length;
     }
