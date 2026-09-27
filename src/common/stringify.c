@@ -77,9 +77,7 @@ const char* tcpflag_to_string(const enum TCPFlag flag) {
         }
     }
 
-    if (!out[0]) {
-        fprintf(stderr, "Unknown TCP flag %" PRIu16 "\n", flag);
-    }
+    if (!out[0]) fprintf(stderr, "Unknown TCP flag %" PRIu16 "\n", flag);
 
     return out;
 }

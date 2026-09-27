@@ -10,12 +10,9 @@ void pretty_print_raw_bytes(unsigned char* data, size_t length) {
     while (from < length) {
         // Print text.
         for (size_t n = from; n < to; ++n) {
-            if (data[n] >= 32u && data[n] <= 126u) {
-                putchar(data[n]);
-            } else {
-                // Print unrepresentable characters as a dot.
-                putchar('.');
-            }
+            if (data[n] >= 32u && data[n] <= 126u) putchar(data[n]);
+            // Print unrepresentable characters as a dot.
+            else putchar('.');
         }
 
         // Pad if necessary so hex part stays aligned.

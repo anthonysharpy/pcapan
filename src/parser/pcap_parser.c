@@ -84,9 +84,7 @@ done:
 static int parse_pcap_file_packets(const struct FileData* file_data, struct PCapData* pcap_data_out) {
     struct PCapPacket* packet = nullptr;
 
-    if (file_data->length <= 24) {
-        return 0; // No packets to read.
-    }
+    if (file_data->length <= 24) return 0; // No packets to read.
 
     pcap_data_out->packet_count = (uint32_t)filedata_count_pcap_packets(file_data, pcap_data_out->endianness);
 

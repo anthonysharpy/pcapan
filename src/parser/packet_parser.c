@@ -122,19 +122,15 @@ static struct IPV4Packet* parse_ipv4_packet(const struct EthernetPacket* etherne
 
     packet->options_length = header_length - 20;
 
-    if (packet->options_length > 0) {
-        packet->options = ethernet_packet->data + 20;
-    } else {
-        packet->options = nullptr;
-    }
+    packet->options = packet->options_length > 0 ?
+        ethernet_packet->data + 20
+        : nullptr;
 
     packet->data_length = total_length - header_length;
 
-    if (packet->data_length > 0) {
-        packet->data = ethernet_packet->data + header_length;
-    } else {
-        packet->data = nullptr;
-    }
+    packet->data = packet->data_length > 0 ?
+        ethernet_packet->data + header_length
+        : nullptr;
 
     *out_success = true;
 
