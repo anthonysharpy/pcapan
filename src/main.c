@@ -8,6 +8,7 @@
 
 int main(int argc, char *argv[]) {
     struct FileData* file = nullptr;
+    struct PCapData pcap_data = {0};
 
     if (argc != 2) {
         fprintf(stderr, "Expected 1 argument, got %d\n", argc-1);
@@ -22,7 +23,7 @@ int main(int argc, char *argv[]) {
     }
 
     success = false;
-    struct PCapData pcap_data = parse_pcap_file(file, &success);
+    pcap_data = parse_pcap_file(file, &success);
     if (!success) {
         fprintf(stderr, "Failed parsing pcap file\n");
         goto fail;
