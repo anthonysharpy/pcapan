@@ -108,7 +108,9 @@ void analyse_bandwidth(const struct PCapData data) {
         if (timestamp > max_time) max_time = timestamp;
         if (timestamp < min_time) min_time = timestamp;
     }
-    double duration_seconds = max_time - min_time;
+    double duration_seconds = min_time != DBL_MAX ?
+        max_time - min_time
+        : 0;
 
     double average_bandwidth = duration_seconds != 0 ?
         BYTES_TO_KILOBYTES(total_traffic_bytes) / duration_seconds
