@@ -119,7 +119,7 @@ void analyse_bandwidth(const struct PCapData data) {
     printf("==============================\n");
     printf("Total traffic: %.2fkB\n", BYTES_TO_KILOBYTES(total_traffic_bytes));
     printf("Duration: %.2fs\n", duration_seconds);
-    printf("Average bandwidth: %.2fkB/s\n", average_bandwidth);
+    printf("Average bandwidth (whole session): %.2fkB/s\n", average_bandwidth);
     printf("==============================\n\n");
 }
 
