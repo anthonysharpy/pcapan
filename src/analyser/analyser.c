@@ -118,7 +118,7 @@ void analyse_bandwidth(const struct PCapData data) {
         : 0;
 
     printf("==============================\n");
-    printf("====== Traffic Analysis ======\n");
+    printf("===== Bandwidth Analysis =====\n");
     printf("==============================\n");
     printf("Total traffic: %.2fkB\n", BYTES_TO_KILOBYTES(total_traffic_bytes));
     printf("Duration: %.2fs\n", duration_seconds);
